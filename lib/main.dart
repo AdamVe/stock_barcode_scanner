@@ -49,33 +49,103 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: MobileScanner(
-                controller: controller,
-                overlay: ScannerAreaCutout(active: _active),
-                onDetect: (capture) {
-                  if (!_active) {
-                    return;
-                  }
-                  final List<Barcode> barcodes = capture.barcodes;
-                  for (final barcode in barcodes) {
-                    setState(() {
-                      _active = false;
-                      HapticFeedback.mediumImpact();
-                      _code = barcode.rawValue ?? '';
-                      Future.delayed(const Duration(seconds: 3), () {
-                        setState(() {
-                          _code = '';
-                          _active = true;
+              child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                final width = constraints.maxWidth;
+                final height = constraints.maxHeight;
+
+                final center = Offset(width / 2, 150);
+                const scanWinHeight = 130.0;
+                final scanWinWidth = width - 40;
+                final scanWinRect = Rect.fromCenter(
+                    center: center, width: scanWinWidth, height: scanWinHeight);
+
+                final path = Path()
+                  ..addRRect(RRect.fromRectXY(scanWinRect, 0, 0));
+
+                const strokeWidth = 3.0;
+                const strokeWidth_2 = strokeWidth / 2;
+                final x1 = center.dx - scanWinWidth / 2;
+                final y1 = center.dy - scanWinHeight / 2;
+                final x2 = center.dx + scanWinWidth / 2;
+                final y2 = center.dy + scanWinHeight / 2;
+                final fgPath = Path()
+                  ..addPolygon([
+                    Offset(x1 - strokeWidth_2, y1 - 5),
+                    Offset(x1 - strokeWidth_2, y1 + 20)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x1 - 5, y1 - strokeWidth_2),
+                    Offset(x1 + 20, y1 - strokeWidth_2)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x2 + strokeWidth_2, y2 - 20),
+                    Offset(x2 + strokeWidth_2, y2 + 5)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x2 - 20, y2 + strokeWidth_2),
+                    Offset(x2 + 5, y2 + strokeWidth_2)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x1 - strokeWidth_2, y2 - 20),
+                    Offset(x1 - strokeWidth_2, y2 + 5)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x1 - 5, y2 + strokeWidth_2),
+                    Offset(x1 + 20, y2 + strokeWidth_2)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x2 + strokeWidth_2, y1 - 5),
+                    Offset(x2 + strokeWidth_2, y1 + 20)
+                  ], false)
+                  ..addPolygon([
+                    Offset(x2 - 20, y1 - strokeWidth_2),
+                    Offset(x2 + 5, y1 - strokeWidth_2)
+                  ], false);
+                return MobileScanner(
+                  controller: controller,
+                  overlay: MobileScannerOverlay(
+                    active: _active,
+                    background: PathPainter(
+                      path: path,
+                      pathPaint: Paint()..color = Colors.black,
+                    ),
+                    foreground: PathPainter(
+                      path: fgPath,
+                      pathPaint: Paint()
+                        ..style = PaintingStyle.stroke
+                        ..strokeWidth = strokeWidth
+                        ..strokeCap = StrokeCap.round
+                        ..color = Colors.white.withOpacity(0.3),
+                    ),
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  scanWindow: scanWinRect,
+                  onDetect: (capture) {
+                    if (!_active) {
+                      return;
+                    }
+                    final List<Barcode> barcodes = capture.barcodes;
+                    for (final barcode in barcodes) {
+                      setState(() {
+                        _active = false;
+                        HapticFeedback.mediumImpact();
+                        _code = barcode.rawValue ?? '';
+                        Future.delayed(const Duration(seconds: 3), () {
+                          setState(() {
+                            _code = '';
+                            _active = true;
+                          });
                         });
                       });
-                    });
-                  }
-                },
-              ),
+                    }
+                  },
+                );
+              }),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: SizedBox(height: 200, child: Text('Scanned: $_code')),
+              child: SizedBox(height: 300, child: Text('Scanned: $_code')),
             )
           ],
         ),
@@ -84,75 +154,65 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class ScannerAreaCutout extends StatelessWidget {
-  final bool active;
+class PathPainter extends StatelessWidget {
+  final Path path;
+  final Paint pathPaint;
 
-  const ScannerAreaCutout({required this.active, super.key});
+  const PathPainter({required this.path, required this.pathPaint, super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColorFiltered(
-          colorFilter:
-              ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.srcOut),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                    color: Colors.black, backgroundBlendMode: BlendMode.dstOut),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Expanded(
-                    child: Container(
-                      margin:
-                          const EdgeInsets.only(top: 80, left: 20, right: 20),
-                      height: 200,
-                      decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: Colors.green,
-                              width: 2,
-                              strokeAlign: BorderSide.strokeAlignInside,
-                              style: BorderStyle.solid)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
+    return CustomPaint(
+      painter: ShapePainter(path: path, pathPaint: pathPaint),
+    );
+  }
+}
+
+class ShapePainter extends CustomPainter {
+  final Path path;
+  final Paint pathPaint;
+
+  const ShapePainter({required this.path, required this.pathPaint}) : super();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(path, pathPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class MobileScannerOverlay extends StatelessWidget {
+  final bool active;
+  final Widget background;
+  final Widget? foreground;
+  final Color color;
+
+  const MobileScannerOverlay(
+      {required this.active,
+      required this.background,
+      this.foreground,
+      required this.color,
+      super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(fit: StackFit.expand, children: [
+      ColorFiltered(
+        colorFilter: ColorFilter.mode(color, BlendMode.srcOut),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(top: 80, left: 20, right: 20),
-                height: 200,
-                decoration: BoxDecoration(
-                    color: active == true
-                        ? Colors.transparent
-                        : Colors.black.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: Colors.green,
-                        width: 2,
-                        strokeAlign: BorderSide.strokeAlignInside,
-                        style: BorderStyle.solid)),
-              ),
+            Container(
+              decoration: BoxDecoration(
+                  color: color, backgroundBlendMode: BlendMode.dstOut),
             ),
+            background
           ],
         ),
-      ],
-    );
+      ),
+      if (foreground != null) foreground!
+    ]);
   }
 }
