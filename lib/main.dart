@@ -32,8 +32,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _code = '';
   bool _active = true;
+  final List<String> _scannedCodes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 final width = constraints.maxWidth;
                 final height = constraints.maxHeight;
 
-                final center = Offset(width / 2, 150);
+                final center = Offset(width / 2, height / 2);
                 const scanWinHeight = 130.0;
                 final scanWinWidth = width - 40;
                 final scanWinRect = Rect.fromCenter(
@@ -130,10 +130,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() {
                         _active = false;
                         HapticFeedback.mediumImpact();
-                        _code = barcode.rawValue ?? '';
+                        if (barcode.rawValue != null) {
+                          _scannedCodes.insertAll(0, [barcode.rawValue!]);
+                        }
                         Future.delayed(const Duration(seconds: 3), () {
                           setState(() {
-                            _code = '';
                             _active = true;
                           });
                         });
@@ -143,10 +144,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               }),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(height: 300, child: Text('Scanned: $_code')),
-            )
+            SizedBox(
+                height: 400,
+                child: ListView.builder(
+                    itemCount: _scannedCodes.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return ListTile(
+                        leading: const Icon(Icons.camera),
+                        title: Text(_scannedCodes[index]),
+                      );
+                    }))
           ],
         ),
       ),
