@@ -2,36 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-void main() {
-  runApp(const StockBarcodeScannerApp());
-}
-
-class StockBarcodeScannerApp extends StatelessWidget {
-  const StockBarcodeScannerApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Stock Barcode Scanner',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Stock Barcode Scanner'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class ScannerPage extends StatefulWidget {
+  const ScannerPage({super.key, required this.title});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ScannerPage> createState() => _ScannerPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _ScannerPageState extends State<ScannerPage> {
   bool _active = true;
   final List<String> _scannedCodes = [];
 

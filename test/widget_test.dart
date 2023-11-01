@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:stock_barcode_scanner/main.dart';
+import 'package:stock_barcode_scanner/app.dart';
 
 void main() {
   testWidgets('initial test', (WidgetTester tester) async {

@@ -11,7 +11,11 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  mobile_scanner: ^3.5.1
+  mobile_scanner: ^3.5.2
+  sqlite3: ^2.1.0
+  sqlite3_flutter_libs: ^0.5.17
+  path_provider: ^2.1.1
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:
