@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:stock_barcode_scanner/db.dart';
 import 'package:stock_barcode_scanner/project_dialog.dart';
+import 'package:stock_barcode_scanner/sections_page.dart';
 
 enum ProjectAction { actionEditProject, actionDeleteProject }
 
 class ProjectsPage extends StatefulWidget {
   const ProjectsPage({super.key});
+
+  static const routeName = '/projects';
 
   @override
   State<ProjectsPage> createState() => _ProjectsPageState();
@@ -32,12 +35,14 @@ class _ProjectsPageState extends State<ProjectsPage> {
           return ProjectDialog(project: originalProject);
         });
 
-    if (project != null) {
+    if (originalProject != null && project != null) {
+      DbConnector.updateProject(project);
+    } else if (project != null) {
       DbConnector.addProject(project);
-      setState(() {
-        projects = DbConnector.getProjects();
-      });
     }
+    setState(() {
+      projects = DbConnector.getProjects();
+    });
   }
 
   @override
@@ -88,7 +93,15 @@ class _ProjectsPageState extends State<ProjectsPage> {
                       isThreeLine: true,
                       subtitle: Text(
                           'Owner: ${project.owner}\nCreated: ${project.created.toLocal()}'),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          SectionsPage.routeName,
+                          arguments: SectionsPageArguments(
+                            project.id,
+                          ),
+                        );
+                      },
                     );
                   }),
             ),

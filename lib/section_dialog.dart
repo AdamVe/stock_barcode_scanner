@@ -2,49 +2,50 @@ import 'package:flutter/material.dart';
 
 import 'db.dart';
 
-class ProjectDialog extends StatefulWidget {
-  final Project? project;
+class SectionDialog extends StatefulWidget {
+  final Section? section;
+  final int projectId;
 
-  const ProjectDialog({super.key, this.project});
+  const SectionDialog(
+      {super.key, required this.section, required this.projectId});
 
   @override
-  State<ProjectDialog> createState() => _ProjectDialogState();
+  State<SectionDialog> createState() => _SectionDialogState();
 }
 
-class _ProjectDialogState extends State<ProjectDialog> {
-  final projectNameController = TextEditingController();
-  final ownerController = TextEditingController();
+class _SectionDialogState extends State<SectionDialog> {
+  final sectionNameController = TextEditingController();
+  final noteController = TextEditingController();
   bool enabled = false;
 
   @override
   void initState() {
     super.initState();
 
-    if (widget.project != null) {
-      ownerController.text = widget.project!.owner;
-      projectNameController.text = widget.project!.name;
+    if (widget.section != null) {
+      noteController.text = widget.section!.note;
+      sectionNameController.text = widget.section!.name;
     }
   }
 
   @override
   void dispose() {
-    projectNameController.dispose();
-    ownerController.dispose();
+    sectionNameController.dispose();
+    noteController.dispose();
     super.dispose();
   }
 
-  bool _isEnabled() => widget.project != null
-      ? projectNameController.text != widget.project!.name ||
-          ownerController.text != widget.project!.owner
-      : projectNameController.text.isNotEmpty &&
-          ownerController.text.isNotEmpty;
+  bool _isEnabled() => widget.section != null
+      ? sectionNameController.text != widget.section!.name ||
+          noteController.text != widget.section!.note
+      : sectionNameController.text.isNotEmpty && noteController.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: widget.project != null
-          ? const Text('Edit project')
-          : const Text('New project'),
+      title: widget.section != null
+          ? const Text('Edit section')
+          : const Text('New section'),
       actions: [
         TextButton(
             onPressed: () {
@@ -55,15 +56,15 @@ class _ProjectDialogState extends State<ProjectDialog> {
             onPressed: !enabled
                 ? null
                 : () {
-                    Navigator.of(context).pop(Project(
-                      widget.project?.id ?? 0,
-                      projectNameController.text,
+                    Navigator.of(context).pop(Section(
+                      widget.section?.id ?? 0,
+                      widget.projectId,
+                      sectionNameController.text,
+                      noteController.text,
                       DateTime.now(),
-                      ownerController.text,
-                      0,
                     ));
                   },
-            child: widget.project != null
+            child: widget.section != null
                 ? const Text('Update')
                 : const Text('Create'))
       ],
@@ -76,10 +77,10 @@ class _ProjectDialogState extends State<ProjectDialog> {
                   enabled = _isEnabled();
                 });
               },
-              controller: projectNameController,
+              controller: sectionNameController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Project name',
+                labelText: 'Section name',
               )),
           const SizedBox(height: 16),
           TextFormField(
@@ -88,10 +89,10 @@ class _ProjectDialogState extends State<ProjectDialog> {
                   enabled = _isEnabled();
                 });
               },
-              controller: ownerController,
+              controller: noteController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Owner',
+                labelText: 'Section note',
               )),
         ],
       ),
