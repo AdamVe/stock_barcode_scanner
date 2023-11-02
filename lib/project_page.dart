@@ -12,23 +12,16 @@ class ProjectPage extends StatefulWidget {
 }
 
 class _ProjectPageState extends State<ProjectPage> {
-  DbConnector? _connector;
   List<Project>? projects;
 
   @override
   void initState() {
     super.initState();
-    DbConnector.getConnector().then((value) {
-      setState(() {
-        _connector = value;
-        projects = _connector?.getProjects();
-      });
-    });
+    projects = DbConnector.getProjects();
   }
 
   @override
   void dispose() {
-    _connector?.close();
     super.dispose();
   }
 
@@ -40,9 +33,9 @@ class _ProjectPageState extends State<ProjectPage> {
         });
 
     if (project != null) {
+      DbConnector.addProject(project);
       setState(() {
-        _connector?.addProject(project);
-        projects = _connector?.getProjects();
+        projects = DbConnector.getProjects();
       });
     }
   }
@@ -81,9 +74,9 @@ class _ProjectPageState extends State<ProjectPage> {
                         onSelected: (ProjectAction projectAction) async {
                           if (projectAction ==
                               ProjectAction.actionDeleteProject) {
-                            _connector?.deleteProject(project);
+                            DbConnector.deleteProject(project);
                             setState(() {
-                              projects = _connector?.getProjects();
+                              projects = DbConnector.getProjects();
                             });
                           } else if (projectAction ==
                               ProjectAction.actionEditProject) {
@@ -95,7 +88,6 @@ class _ProjectPageState extends State<ProjectPage> {
                       isThreeLine: true,
                       subtitle: Text(
                           'Owner: ${project.owner}\nCreated: ${project.created.toLocal()}'),
-
                       onTap: () {},
                     );
                   }),

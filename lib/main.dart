@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'db.dart';
 import 'project_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DbConnector.init();
   runApp(const StockBarcodeScannerApp());
 }
 

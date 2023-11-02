@@ -13,17 +13,15 @@ class Project {
 }
 
 class DbConnector {
-  final Database _db;
+  static late Database _db;
 
-  static const kTableProject = 'project';
-
-  static Future<DbConnector> getConnector() async {
-    final applicationDocumentsDirectory =
-        await getApplicationDocumentsDirectory();
-    final dbFile = join(applicationDocumentsDirectory.path, 'sbs.sqlite');
-    final db = sqlite3.open(dbFile,
-        mode: OpenMode.readWriteCreate, uri: false, mutex: true);
-    db.execute('''
+  static Future<void> init() async {
+    try {
+      final docDir = await getApplicationDocumentsDirectory();
+      final dbFile = join(docDir.path, 'sbs.sqlite');
+      _db = sqlite3.open(dbFile,
+          mode: OpenMode.readWriteCreate, uri: false, mutex: true);
+      _db.execute('''
       CREATE TABLE IF NOT EXISTS $kTableProject (
         id INTEGER NOT NULL PRIMARY KEY,
         name TEXT NOT NULL,
@@ -32,16 +30,18 @@ class DbConnector {
         priority INTEGER NOT NULL
       );
     ''');
-    return DbConnector._(db);
+    } catch (e) {
+      // ignored
+    }
   }
 
-  const DbConnector._(this._db);
+  static const kTableProject = 'project';
 
-  void close() {
+  static void close() {
     _db.dispose();
   }
 
-  List<Project> getProjects() {
+  static List<Project> getProjects() {
     List<Project> projects = [];
     final projectsResultSet =
         _db.select('SELECT * FROM $kTableProject ORDER BY priority');
@@ -58,14 +58,14 @@ class DbConnector {
     return projects;
   }
 
-  void addProject(Project project) {
+  static void addProject(Project project) {
     _db.execute('''
       INSERT INTO $kTableProject (name, created, owner, priority) 
       VALUES('${project.name}', ${project.created.millisecondsSinceEpoch}, '${project.owner}', ${project.priority})
     ''');
   }
 
-  void deleteProject(Project project) {
+  static void deleteProject(Project project) {
     _db.execute('''
       DELETE FROM $kTableProject
       WHERE id = ${project.id}
