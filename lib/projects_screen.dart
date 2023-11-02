@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:stock_barcode_scanner/db.dart';
 import 'package:stock_barcode_scanner/project_dialog.dart';
-import 'package:stock_barcode_scanner/sections_page.dart';
+import 'package:stock_barcode_scanner/sections_screen.dart';
 
 enum ProjectAction { actionEditProject, actionDeleteProject }
 
-class ProjectsPage extends StatefulWidget {
-  const ProjectsPage({super.key});
+class ProjectsScreen extends StatefulWidget {
+  const ProjectsScreen({super.key});
 
   static const routeName = '/projects';
 
   @override
-  State<ProjectsPage> createState() => _ProjectsPageState();
+  State<ProjectsScreen> createState() => _ProjectsScreenState();
 }
 
-class _ProjectsPageState extends State<ProjectsPage> {
+class _ProjectsScreenState extends State<ProjectsScreen> {
   List<Project>? projects;
 
   @override
@@ -96,8 +96,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          SectionsPage.routeName,
-                          arguments: SectionsPageArguments(
+                          SectionsScreen.routeName,
+                          arguments: SectionsScreenArguments(
                             project.id,
                           ),
                         );

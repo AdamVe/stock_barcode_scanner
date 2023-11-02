@@ -1,42 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:stock_barcode_scanner/db.dart';
-import 'package:stock_barcode_scanner/scanner_page.dart';
+import 'package:stock_barcode_scanner/scanner_screen.dart';
 import 'package:stock_barcode_scanner/section_dialog.dart';
 
 enum SectionAction { actionEditSection, actionDeleteSection }
 
-class SectionsPageArguments {
+class SectionsScreenArguments {
   final int projectId;
 
-  const SectionsPageArguments(this.projectId);
+  const SectionsScreenArguments(this.projectId);
 }
 
-class SectionsPage extends StatelessWidget {
-  const SectionsPage({super.key});
+class SectionsScreen extends StatelessWidget {
+  const SectionsScreen({super.key});
 
   static const String routeName = '/sections';
 
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)!.settings.arguments as SectionsPageArguments;
-    return SectionsPageChild(args.projectId);
+        ModalRoute.of(context)!.settings.arguments as SectionsScreenArguments;
+    return _SectionsScreenChild(args.projectId);
   }
 }
 
-class SectionsPageChild extends StatefulWidget {
+class _SectionsScreenChild extends StatefulWidget {
   final int _projectId;
 
-  const SectionsPageChild(
-    this._projectId, {
-    super.key,
-  });
+  const _SectionsScreenChild(this._projectId);
 
   @override
-  State<SectionsPageChild> createState() => _SectionsPageChildState();
+  State<_SectionsScreenChild> createState() => _SectionsScreenChildState();
 }
 
-class _SectionsPageChildState extends State<SectionsPageChild> {
+class _SectionsScreenChildState extends State<_SectionsScreenChild> {
   List<Section>? sections;
 
   @override
@@ -121,8 +118,8 @@ class _SectionsPageChildState extends State<SectionsPageChild> {
                       onTap: () {
                         Navigator.pushNamed(
                           context,
-                          ScannerPage.routeName,
-                          arguments: ScannerPageArguments(
+                          ScannerScreen.routeName,
+                          arguments: ScannerScreenArguments(
                             section,
                           ),
                         );

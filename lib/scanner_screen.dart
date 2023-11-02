@@ -4,35 +4,35 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'db.dart';
 
-class ScannerPageArguments {
+class ScannerScreenArguments {
   final Section section;
 
-  ScannerPageArguments(this.section);
+  ScannerScreenArguments(this.section);
 }
 
-class ScannerPage extends StatelessWidget {
+class ScannerScreen extends StatelessWidget {
   static const routeName = '/scanner';
 
-  const ScannerPage({super.key});
+  const ScannerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)!.settings.arguments as ScannerPageArguments;
-    return ScannerPageChild(section: args.section);
+        ModalRoute.of(context)!.settings.arguments as ScannerScreenArguments;
+    return _ScannerScreenChild(section: args.section);
   }
 }
 
-class ScannerPageChild extends StatefulWidget {
+class _ScannerScreenChild extends StatefulWidget {
   final Section section;
 
-  const ScannerPageChild({required this.section, super.key});
+  const _ScannerScreenChild({required this.section});
 
   @override
-  State<ScannerPageChild> createState() => _ScannerPageChildState();
+  State<_ScannerScreenChild> createState() => _ScannerScreenChildState();
 }
 
-class _ScannerPageChildState extends State<ScannerPageChild> {
+class _ScannerScreenChildState extends State<_ScannerScreenChild> {
   bool _active = true;
   final List<String> _scannedCodes = [];
 

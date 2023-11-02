@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:stock_barcode_scanner/scanner_page.dart';
-import 'package:stock_barcode_scanner/sections_page.dart';
+import 'package:stock_barcode_scanner/scanner_screen.dart';
+import 'package:stock_barcode_scanner/sections_screen.dart';
 
 import 'db.dart';
-import 'projects_page.dart';
+import 'projects_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,13 +29,13 @@ class StockBarcodeScannerApp extends StatelessWidget {
             seedColor: seedColor, brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      initialRoute: ProjectsPage.routeName,
+      initialRoute: ProjectsScreen.routeName,
       routes: {
-        ProjectsPage.routeName: (context) => const ProjectsPage(),
-        SectionsPage.routeName: (context) => const SectionsPage(),
-        ScannerPage.routeName: (context) => const ScannerPage()
+        ProjectsScreen.routeName: (context) => const ProjectsScreen(),
+        SectionsScreen.routeName: (context) => const SectionsScreen(),
+        ScannerScreen.routeName: (context) => const ScannerScreen()
       },
-      home: const ProjectsPage(),
+      home: const ProjectsScreen(),
     );
   }
 }
