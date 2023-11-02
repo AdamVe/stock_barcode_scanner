@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stock_barcode_scanner/db.dart';
+import 'package:stock_barcode_scanner/scanner_page.dart';
 import 'package:stock_barcode_scanner/section_dialog.dart';
 
 enum SectionAction { actionEditSection, actionDeleteSection }
@@ -117,7 +118,15 @@ class _SectionsPageChildState extends State<SectionsPageChild> {
                       isThreeLine: true,
                       subtitle: Text(
                           'Note: ${section.note}\nCreated: ${section.created.toLocal()}'),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          ScannerPage.routeName,
+                          arguments: ScannerPageArguments(
+                            section,
+                          ),
+                        );
+                      },
                     );
                   }),
             ),

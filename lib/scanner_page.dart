@@ -2,16 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-class ScannerPage extends StatefulWidget {
-  const ScannerPage({super.key, required this.title});
+import 'db.dart';
 
-  final String title;
+class ScannerPageArguments {
+  final Section section;
 
-  @override
-  State<ScannerPage> createState() => _ScannerPageState();
+  ScannerPageArguments(this.section);
 }
 
-class _ScannerPageState extends State<ScannerPage> {
+class ScannerPage extends StatelessWidget {
+  static const routeName = '/scanner';
+
+  const ScannerPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as ScannerPageArguments;
+    return ScannerPageChild(section: args.section);
+  }
+}
+
+class ScannerPageChild extends StatefulWidget {
+  final Section section;
+
+  const ScannerPageChild({required this.section, super.key});
+
+  @override
+  State<ScannerPageChild> createState() => _ScannerPageChildState();
+}
+
+class _ScannerPageChildState extends State<ScannerPageChild> {
   bool _active = true;
   final List<String> _scannedCodes = [];
 
@@ -23,6 +44,7 @@ class _ScannerPageState extends State<ScannerPage> {
     );
 
     return Scaffold(
+      appBar: AppBar(title: Text('Section: ${widget.section.name}')),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,

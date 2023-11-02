@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stock_barcode_scanner/scanner_page.dart';
 import 'package:stock_barcode_scanner/sections_page.dart';
 
 import 'db.dart';
@@ -31,7 +32,8 @@ class StockBarcodeScannerApp extends StatelessWidget {
       initialRoute: ProjectsPage.routeName,
       routes: {
         ProjectsPage.routeName: (context) => const ProjectsPage(),
-        SectionsPage.routeName: (context) => const SectionsPage()
+        SectionsPage.routeName: (context) => const SectionsPage(),
+        ScannerPage.routeName: (context) => const ScannerPage()
       },
       home: const ProjectsPage(),
     );
