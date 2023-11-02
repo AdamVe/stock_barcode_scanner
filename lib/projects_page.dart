@@ -4,14 +4,14 @@ import 'package:stock_barcode_scanner/project_dialog.dart';
 
 enum ProjectAction { actionEditProject, actionDeleteProject }
 
-class ProjectPage extends StatefulWidget {
-  const ProjectPage({super.key});
+class ProjectsPage extends StatefulWidget {
+  const ProjectsPage({super.key});
 
   @override
-  State<ProjectPage> createState() => _ProjectPageState();
+  State<ProjectsPage> createState() => _ProjectsPageState();
 }
 
-class _ProjectPageState extends State<ProjectPage> {
+class _ProjectsPageState extends State<ProjectsPage> {
   List<Project>? projects;
 
   @override

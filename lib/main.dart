@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'db.dart';
-import 'project_page.dart';
+import 'projects_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class StockBarcodeScannerApp extends StatelessWidget {
             seedColor: seedColor, brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      home: const ProjectPage(),
+      home: const ProjectsPage(),
     );
   }
 }
