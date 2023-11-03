@@ -36,6 +36,23 @@ class Section {
       DateTime.fromMillisecondsSinceEpoch(row['created']));
 }
 
+class ScannedItem {
+  final int id;
+  final int sectionId;
+  final String barcode;
+  final DateTime created;
+  final int count;
+
+  ScannedItem(this.id, this.sectionId, this.barcode, this.created, this.count);
+
+  factory ScannedItem.fromRow(Row row) => ScannedItem(
+      row['id'],
+      row['section_id'],
+      row['barcode'],
+      DateTime.fromMillisecondsSinceEpoch(row['created']),
+      row['count']);
+}
+
 class DbConnector {
   static late Database _db;
 
@@ -61,6 +78,14 @@ class DbConnector {
         note TEXT NOT NULL,
         created DATE NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS $kTableScannedItem (
+        id INTEGER NOT NULL PRIMARY KEY,
+        section_id INTEGER NOT NULL,
+        barcode TEXT NOT NULL,
+        created DATE NOT NULL,
+        count INTEGER NOT NULL
+      );
     ''');
     } catch (e) {
       // ignored
@@ -69,6 +94,7 @@ class DbConnector {
 
   static const kTableProject = 'project';
   static const kTableSection = 'section';
+  static const kTableScannedItem = 'scanned_item';
 
   static void close() {
     _db.dispose();
@@ -136,6 +162,40 @@ class DbConnector {
     _db.execute('''
       DELETE FROM $kTableSection
       WHERE id = ${section.id}
+    ''');
+  }
+
+  static List<ScannedItem> getScannedItems(int sectionId) {
+    final rs = _db.select(
+        'SELECT * FROM $kTableScannedItem where section_id = $sectionId '
+        'ORDER BY created DESC');
+    return rs.map((row) => ScannedItem.fromRow(row)).toList();
+  }
+
+  static void addScannedItem(ScannedItem scannedItem) {
+    _db.execute('''
+      INSERT INTO $kTableScannedItem (section_id, barcode, created, count)
+      VALUES(${scannedItem.sectionId}, '${scannedItem.barcode}',
+       ${scannedItem.created.millisecondsSinceEpoch}, '${scannedItem.count}')
+    ''');
+  }
+
+  static void updateScannedItem(ScannedItem scannedItem) {
+    _db.execute('''
+      UPDATE $kTableScannedItem
+      SET section_id = ${scannedItem.sectionId},
+          name = '${scannedItem.barcode}',
+          created = ${scannedItem.created.millisecondsSinceEpoch},
+          count = '${scannedItem.count}', 
+      WHERE
+          id = ${scannedItem.id}
+    ''');
+  }
+
+  static void deleteScannedItem(ScannedItem scannedItem) {
+    _db.execute('''
+      DELETE FROM $kTableScannedItem
+      WHERE id = ${scannedItem.id}
     ''');
   }
 }

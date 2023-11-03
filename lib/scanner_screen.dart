@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:stock_barcode_scanner/DateTimeExt.dart';
 
 import 'db.dart';
 
@@ -34,7 +35,13 @@ class _ScannerScreenChild extends StatefulWidget {
 
 class _ScannerScreenChildState extends State<_ScannerScreenChild> {
   bool _active = true;
-  final List<String> _scannedCodes = [];
+  List<ScannedItem>? scannedItems;
+
+  @override
+  void initState() {
+    super.initState();
+    scannedItems = DbConnector.getScannedItems(widget.section.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,13 +140,21 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                         _active = false;
                         HapticFeedback.mediumImpact();
                         if (barcode.rawValue != null) {
-                          _scannedCodes.insertAll(0, [barcode.rawValue!]);
-                        }
-                        Future.delayed(const Duration(seconds: 3), () {
-                          setState(() {
-                            _active = true;
+                          DbConnector.addScannedItem(ScannedItem(
+                            0,
+                            widget.section.id,
+                            barcode.rawValue!,
+                            DateTime.now(),
+                            1,
+                          ));
+                          scannedItems =
+                              DbConnector.getScannedItems(widget.section.id);
+                          Future.delayed(const Duration(seconds: 3), () {
+                            setState(() {
+                              _active = true;
+                            });
                           });
-                        });
+                        }
                       });
                     }
                   },
@@ -149,11 +164,14 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
             SizedBox(
                 height: 400,
                 child: ListView.builder(
-                    itemCount: _scannedCodes.length,
+                    itemCount: scannedItems?.length ?? 0,
                     itemBuilder: (BuildContext context, int index) {
+                      final scannedItem = scannedItems![index];
                       return ListTile(
-                        leading: const Icon(Icons.camera),
-                        title: Text(_scannedCodes[index]),
+                        leading: const Icon(Icons.document_scanner_outlined),
+                        title: Text(scannedItem.barcode),
+                        subtitle: Text(scannedItem.created.format()),
+                        trailing: Text('${scannedItem.count}'),
                       );
                     }))
           ],
