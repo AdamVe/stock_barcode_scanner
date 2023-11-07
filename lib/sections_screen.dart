@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/db.dart';
 import 'package:stock_barcode_scanner/scanner_screen.dart';
 import 'package:stock_barcode_scanner/section_dialog.dart';
 
-enum SectionAction { actionEditSection, actionDeleteSection }
+import 'export.dart';
+
+enum SectionAction {
+  actionEditSection,
+  actionDeleteSection,
+  actionExportSection
+}
 
 class SectionsScreenArguments {
   final int projectId;
@@ -91,6 +98,9 @@ class _SectionsScreenChildState extends State<_SectionsScreenChild> {
                       trailing: PopupMenuButton<SectionAction>(
                         itemBuilder: (BuildContext context) => [
                           const PopupMenuItem<SectionAction>(
+                              value: SectionAction.actionExportSection,
+                              child: Text('Export')),
+                          const PopupMenuItem<SectionAction>(
                               value: SectionAction.actionEditSection,
                               child: Text('Edit')),
                           const PopupMenuItem<SectionAction>(
@@ -98,23 +108,24 @@ class _SectionsScreenChildState extends State<_SectionsScreenChild> {
                               child: Text('Delete'))
                         ],
                         onSelected: (SectionAction sectionAction) async {
-                          if (sectionAction ==
-                              SectionAction.actionDeleteSection) {
-                            DbConnector.deleteSection(section);
-                            setState(() {
-                              sections =
-                                  DbConnector.getSections(widget._projectId);
-                            });
-                          } else if (sectionAction ==
-                              SectionAction.actionEditSection) {
-                            await _sectionDialog(section);
+                          switch (sectionAction) {
+                            case SectionAction.actionEditSection:
+                              await _sectionDialog(section);
+                            case SectionAction.actionDeleteSection:
+                              DbConnector.deleteSection(section);
+                              setState(() {
+                                sections =
+                                    DbConnector.getSections(widget._projectId);
+                              });
+                            case SectionAction.actionExportSection:
+                              await export(section);
                           }
                         },
                       ),
                       title: Text(section.name),
                       isThreeLine: true,
                       subtitle: Text(
-                          'Note: ${section.note}\nCreated: ${section.created.toLocal()}'),
+                          'Note: ${section.note}\nCreated: ${section.created.format()}'),
                       onTap: () {
                         Navigator.pushNamed(
                           context,

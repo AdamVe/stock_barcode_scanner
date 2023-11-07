@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:stock_barcode_scanner/DateTimeExt.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
 
 import 'db.dart';
 

@@ -17,6 +17,14 @@ class Project {
       DateTime.fromMillisecondsSinceEpoch(row['created']),
       row['owner'],
       row['priority']);
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'created': created.millisecondsSinceEpoch,
+        'owner': owner,
+        'priority': priority
+      };
 }
 
 class Section {
@@ -34,6 +42,14 @@ class Section {
       row['name'],
       row['note'],
       DateTime.fromMillisecondsSinceEpoch(row['created']));
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'projectId': projectId,
+        'name': name,
+        'note': note,
+        'created': created.millisecondsSinceEpoch
+      };
 }
 
 class ScannedItem {
@@ -51,6 +67,21 @@ class ScannedItem {
       row['barcode'],
       DateTime.fromMillisecondsSinceEpoch(row['created']),
       row['count']);
+
+  ScannedItem.fromJson(Map<String, dynamic> json)
+      : id = json['id'] as int,
+        sectionId = json['sectionId'] as int,
+        barcode = json['barcode'] as String,
+        created = DateTime.fromMillisecondsSinceEpoch(json['created'] as int),
+        count = json['count'] as int;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'sectionId': sectionId,
+        'barcode': barcode,
+        'created': created.millisecondsSinceEpoch,
+        'count': count
+      };
 }
 
 class DbConnector {

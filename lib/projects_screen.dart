@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/db.dart';
 import 'package:stock_barcode_scanner/project_dialog.dart';
 import 'package:stock_barcode_scanner/sections_screen.dart';
@@ -92,7 +93,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       title: Text(project.name),
                       isThreeLine: true,
                       subtitle: Text(
-                          'Owner: ${project.owner}\nCreated: ${project.created.toLocal()}'),
+                          'Owner: ${project.owner}\nCreated: ${project.created.format()}'),
                       onTap: () {
                         Navigator.pushNamed(
                           context,
