@@ -43,7 +43,9 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
   bool _valid = false;
   Timer? _timer;
   Barcode? _lastBarcode;
-  List<ScannedItem>? scannedItems;
+  int _lastCodeCount = 1;
+  int _insertedScanItemId = 0;
+  List<ScannedItem>? _scannedItems;
 
   Rect _getScanRect(double width, double height) {
     final center = Offset(width / 2, 160);
@@ -102,7 +104,7 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
   @override
   void initState() {
     super.initState();
-    scannedItems = DbConnector.getScannedItems(widget.section.id);
+    _scannedItems = DbConnector.getScannedItems(widget.section.id);
   }
 
   @override
@@ -146,6 +148,8 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                         bool detected = false;
                         bool valid = false;
                         Barcode? lastBarcode = _lastBarcode;
+                        int lastCodeCount = _lastCodeCount;
+                        int insertedScanItemId = _insertedScanItemId;
                         final List<Barcode> barcodes = capture.barcodes;
                         if (barcodes.isNotEmpty) {
                           detected = true;
@@ -169,15 +173,16 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
 
                           // add this barcode
                           HapticFeedback.mediumImpact();
-                          DbConnector.addScannedItem(ScannedItem(
+                          insertedScanItemId =
+                              DbConnector.addScannedItem(ScannedItem(
                             0,
                             widget.section.id,
                             currentBarcode.rawValue!,
                             DateTime.now(),
                             1,
                           ));
-                          scannedItems =
-                              DbConnector.getScannedItems(widget.section.id);
+
+                          lastCodeCount = 1;
                         } else {
                           if (currentBarcode != null &&
                               currentBarcode.rawValue ==
@@ -197,6 +202,10 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                             _detected = detected;
                             _valid = valid;
                             _lastBarcode = lastBarcode;
+                            _lastCodeCount = lastCodeCount;
+                            _insertedScanItemId = insertedScanItemId;
+                            _scannedItems =
+                                DbConnector.getScannedItems(widget.section.id);
                           });
                         } else {
                           _timer?.cancel();
@@ -210,11 +219,85 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                         }
                       },
                     ),
-                    // PositionedDirectional(
-                    //     bottom: 60,
-                    //     end: 30,
-                    //     child: ElevatedButton(
-                    //         onPressed: () {}, child: Text("CAPTURE")))
+                    if (_lastBarcode != null && _lastBarcode?.rawValue != null)
+                      PositionedDirectional(
+                          start: 0,
+                          end: 0,
+                          bottom: 30,
+                          child: Column(
+                            children: [
+                              Text(
+                                _lastBarcode!.rawValue!,
+                                style:
+                                    Theme.of(context).textTheme.headlineSmall,
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.max,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  ElevatedButton(
+                                      onPressed: _lastCodeCount > 1
+                                          ? () {
+                                              int lastCodeCount =
+                                                  _lastCodeCount - 1;
+                                              // add this barcode
+                                              HapticFeedback.mediumImpact();
+                                              DbConnector.updateScannedItem(
+                                                  ScannedItem(
+                                                _insertedScanItemId,
+                                                widget.section.id,
+                                                _lastBarcode!.rawValue!,
+                                                DateTime.now(),
+                                                lastCodeCount,
+                                              ));
+
+                                              setState(() {
+                                                _lastCodeCount = lastCodeCount;
+                                                _scannedItems =
+                                                    DbConnector.getScannedItems(
+                                                        widget.section.id);
+                                              });
+                                            }
+                                          : null,
+                                      child: const Icon(Icons.remove)),
+                                  SizedBox(
+                                      width: 64,
+                                      child: Text(
+                                        _lastCodeCount.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall,
+                                      )),
+                                  ElevatedButton(
+                                      onPressed: _lastCodeCount < 1000
+                                          ? () {
+                                              int lastCodeCount =
+                                                  _lastCodeCount + 1;
+                                              // add this barcode
+                                              HapticFeedback.mediumImpact();
+                                              DbConnector.updateScannedItem(
+                                                  ScannedItem(
+                                                _insertedScanItemId,
+                                                widget.section.id,
+                                                _lastBarcode!.rawValue!,
+                                                DateTime.now(),
+                                                lastCodeCount,
+                                              ));
+
+                                              setState(() {
+                                                _lastCodeCount = lastCodeCount;
+                                                _scannedItems =
+                                                    DbConnector.getScannedItems(
+                                                        widget.section.id);
+                                              });
+                                            }
+                                          : null,
+                                      child: const Icon(Icons.add)),
+                                ],
+                              ),
+                            ],
+                          ))
                   ]);
                 }),
               ),
@@ -224,18 +307,33 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                     ListTile(
                       leading: const Icon(Icons.document_scanner_outlined),
                       title: const Text('Items'),
-                      subtitle: Text('Count: ${scannedItems?.length ?? 0}'),
+                      subtitle: Text('Count: ${_scannedItems?.length ?? 0}'),
                     ),
                     SizedBox(
                       height: 250,
                       child: ListView.builder(
-                          itemCount: scannedItems?.length ?? 0,
+                          itemCount: _scannedItems?.length ?? 0,
                           itemBuilder: (BuildContext context, int index) {
-                            final scannedItem = scannedItems![index];
+                            final scannedItem = _scannedItems![index];
                             return ListTile(
-                              title: Text(
-                                scannedItem.barcode,
-                                style: Theme.of(context).textTheme.displaySmall,
+                              title: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 32,
+                                    child: scannedItem.count > 1
+                                        ? Text('${scannedItem.count} \u00d7')
+                                        : const Text(''),
+                                  ),
+                                  const SizedBox(
+                                    width: 8,
+                                  ),
+                                  Text(
+                                    scannedItem.barcode,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displaySmall,
+                                  ),
+                                ],
                               ),
                               subtitle: Text(scannedItem.created.format()),
                             );

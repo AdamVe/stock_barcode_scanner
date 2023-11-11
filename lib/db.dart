@@ -203,21 +203,23 @@ class DbConnector {
     return rs.map((row) => ScannedItem.fromRow(row)).toList();
   }
 
-  static void addScannedItem(ScannedItem scannedItem) {
+  static int addScannedItem(ScannedItem scannedItem) {
     _db.execute('''
       INSERT INTO $kTableScannedItem (section_id, barcode, created, count)
       VALUES(${scannedItem.sectionId}, '${scannedItem.barcode}',
        ${scannedItem.created.millisecondsSinceEpoch}, '${scannedItem.count}')
     ''');
+
+    return _db.lastInsertRowId;
   }
 
   static void updateScannedItem(ScannedItem scannedItem) {
     _db.execute('''
       UPDATE $kTableScannedItem
       SET section_id = ${scannedItem.sectionId},
-          name = '${scannedItem.barcode}',
+          barcode = '${scannedItem.barcode}',
           created = ${scannedItem.created.millisecondsSinceEpoch},
-          count = '${scannedItem.count}', 
+          count = ${scannedItem.count}
       WHERE
           id = ${scannedItem.id}
     ''');
