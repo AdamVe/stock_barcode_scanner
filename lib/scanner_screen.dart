@@ -1,9 +1,14 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 
 import 'db.dart';
+
+const _strokeWidth = 3.0;
 
 class ScannerScreenArguments {
   final Section section;
@@ -34,8 +39,65 @@ class _ScannerScreenChild extends StatefulWidget {
 }
 
 class _ScannerScreenChildState extends State<_ScannerScreenChild> {
-  bool _active = true;
+  bool _detected = false;
+  bool _valid = false;
+  Timer? _timer;
+  Barcode? _lastBarcode;
   List<ScannedItem>? scannedItems;
+
+  Rect _getScanRect(double width, double height) {
+    final center = Offset(width / 2, 160);
+    const scanWinHeight = 130.0;
+    final scanWinWidth = width - 40;
+    return Rect.fromCenter(
+        center: center, width: scanWinWidth, height: scanWinHeight);
+  }
+
+  Path _getOverlayCutOutPath(Rect rect) {
+    return Path()..addRRect(RRect.fromRectXY(rect, 0, 0));
+  }
+
+  Path _getOverlayCutOutForegroundPath(Rect rect) {
+    const strokeWidth_2 = _strokeWidth / 2;
+
+    final x1 = rect.center.dx - rect.width / 2;
+    final y1 = rect.center.dy - rect.height / 2;
+    final x2 = rect.center.dx + rect.width / 2;
+    final y2 = rect.center.dy + rect.height / 2;
+    return Path()
+      ..addPolygon([
+        Offset(x1 - strokeWidth_2, y1 - 5),
+        Offset(x1 - strokeWidth_2, y1 + 20)
+      ], false)
+      ..addPolygon([
+        Offset(x1 - 5, y1 - strokeWidth_2),
+        Offset(x1 + 20, y1 - strokeWidth_2)
+      ], false)
+      ..addPolygon([
+        Offset(x2 + strokeWidth_2, y2 - 20),
+        Offset(x2 + strokeWidth_2, y2 + 5)
+      ], false)
+      ..addPolygon([
+        Offset(x2 - 20, y2 + strokeWidth_2),
+        Offset(x2 + 5, y2 + strokeWidth_2)
+      ], false)
+      ..addPolygon([
+        Offset(x1 - strokeWidth_2, y2 - 20),
+        Offset(x1 - strokeWidth_2, y2 + 5)
+      ], false)
+      ..addPolygon([
+        Offset(x1 - 5, y2 + strokeWidth_2),
+        Offset(x1 + 20, y2 + strokeWidth_2)
+      ], false)
+      ..addPolygon([
+        Offset(x2 + strokeWidth_2, y1 - 5),
+        Offset(x2 + strokeWidth_2, y1 + 20)
+      ], false)
+      ..addPolygon([
+        Offset(x2 - 20, y1 - strokeWidth_2),
+        Offset(x2 + 5, y1 - strokeWidth_2)
+      ], false);
+  }
 
   @override
   void initState() {
@@ -47,7 +109,7 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
   Widget build(BuildContext context) {
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
-      detectionTimeoutMs: 150,
+      detectionTimeoutMs: 350,
     );
 
     return Theme(
@@ -60,106 +122,90 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints constraints) {
-                  final width = constraints.maxWidth;
-                  final height = constraints.maxHeight;
+                child: LayoutBuilder(builder:
+                    (BuildContext context, BoxConstraints constraints) {
+                  final scanRect =
+                      _getScanRect(constraints.maxWidth, constraints.maxHeight);
+                  final path = _getOverlayCutOutPath(scanRect);
+                  final fgPath = _getOverlayCutOutForegroundPath(scanRect);
 
-                  final center = Offset(width / 2, 160);
-                  const scanWinHeight = 130.0;
-                  final scanWinWidth = width - 40;
-                  final scanWinRect = Rect.fromCenter(
-                      center: center, width: scanWinWidth, height: scanWinHeight);
-
-                  final path = Path()
-                    ..addRRect(RRect.fromRectXY(scanWinRect, 0, 0));
-
-                  const strokeWidth = 3.0;
-                  const strokeWidth_2 = strokeWidth / 2;
-                  final x1 = center.dx - scanWinWidth / 2;
-                  final y1 = center.dy - scanWinHeight / 2;
-                  final x2 = center.dx + scanWinWidth / 2;
-                  final y2 = center.dy + scanWinHeight / 2;
-                  final fgPath = Path()
-                    ..addPolygon([
-                      Offset(x1 - strokeWidth_2, y1 - 5),
-                      Offset(x1 - strokeWidth_2, y1 + 20)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x1 - 5, y1 - strokeWidth_2),
-                      Offset(x1 + 20, y1 - strokeWidth_2)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x2 + strokeWidth_2, y2 - 20),
-                      Offset(x2 + strokeWidth_2, y2 + 5)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x2 - 20, y2 + strokeWidth_2),
-                      Offset(x2 + 5, y2 + strokeWidth_2)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x1 - strokeWidth_2, y2 - 20),
-                      Offset(x1 - strokeWidth_2, y2 + 5)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x1 - 5, y2 + strokeWidth_2),
-                      Offset(x1 + 20, y2 + strokeWidth_2)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x2 + strokeWidth_2, y1 - 5),
-                      Offset(x2 + strokeWidth_2, y1 + 20)
-                    ], false)
-                    ..addPolygon([
-                      Offset(x2 - 20, y1 - strokeWidth_2),
-                      Offset(x2 + 5, y1 - strokeWidth_2)
-                    ], false);
                   return Stack(children: [
                     MobileScanner(
                       controller: controller,
                       overlay: MobileScannerOverlay(
-                        active: _active,
-                        background: PathPainter(
-                          path: path,
-                          pathPaint: Paint()..color = Colors.black,
-                        ),
-                        foreground: PathPainter(
-                          path: fgPath,
-                          pathPaint: Paint()
-                            ..style = PaintingStyle.stroke
-                            ..strokeWidth = strokeWidth
-                            ..strokeCap = StrokeCap.round
-                            ..color = Colors.white.withOpacity(0.3),
+                        background: OverlayBackground(path),
+                        foreground: OverlayForeground(
+                          fgPath,
+                          detected: _detected,
+                          valid: _valid,
                         ),
                         color: Colors.black.withOpacity(0.6),
                       ),
-                      scanWindow: scanWinRect,
+                      scanWindow: scanRect,
                       onDetect: (capture) {
-                        if (!_active) {
-                          return;
-                        }
+                        bool detected = false;
+                        bool valid = false;
+                        Barcode? lastBarcode = _lastBarcode;
                         final List<Barcode> barcodes = capture.barcodes;
-                        for (final barcode in barcodes.where(
-                            (element) => element.format == BarcodeFormat.ean13)) {
-                          setState(() {
-                            _active = false;
-                            HapticFeedback.mediumImpact();
-                            if (barcode.rawValue != null) {
-                              DbConnector.addScannedItem(ScannedItem(
-                                0,
-                                widget.section.id,
-                                barcode.rawValue!,
-                                DateTime.now(),
-                                1,
-                              ));
-                              scannedItems =
-                                  DbConnector.getScannedItems(widget.section.id);
-                              Future.delayed(const Duration(milliseconds: 300),
-                                  () {
-                                setState(() {
-                                  _active = true;
-                                });
-                              });
+                        if (barcodes.isNotEmpty) {
+                          detected = true;
+                        }
+
+                        final currentBarcode = barcodes
+                            .where((element) =>
+                                element.format == BarcodeFormat.ean13)
+                            .firstOrNull;
+
+                        if (currentBarcode != null) {
+                          valid = true;
+                        }
+
+                        if (currentBarcode != null &&
+                            currentBarcode.rawValue != lastBarcode?.rawValue) {
+                          if (kDebugMode) {
+                            print(
+                                'Found new barcode: ${currentBarcode.displayValue}');
+                          }
+
+                          // add this barcode
+                          HapticFeedback.mediumImpact();
+                          DbConnector.addScannedItem(ScannedItem(
+                            0,
+                            widget.section.id,
+                            currentBarcode.rawValue!,
+                            DateTime.now(),
+                            1,
+                          ));
+                          scannedItems =
+                              DbConnector.getScannedItems(widget.section.id);
+                        } else {
+                          if (currentBarcode != null &&
+                              currentBarcode.rawValue ==
+                                  lastBarcode?.rawValue) {
+                            if (kDebugMode) {
+                              print(
+                                  'See old barcode: ${currentBarcode.displayValue}');
                             }
+                          }
+                        }
+
+                        lastBarcode = currentBarcode;
+
+                        if (_detected != detected || _valid != valid) {
+                          _timer?.cancel();
+                          setState(() {
+                            _detected = detected;
+                            _valid = valid;
+                            _lastBarcode = lastBarcode;
+                          });
+                        } else {
+                          _timer?.cancel();
+                          _timer = Timer(const Duration(milliseconds: 750), () {
+                            setState(() {
+                              _detected = false;
+                              _valid = false;
+                              _lastBarcode = lastBarcode;
+                            });
                           });
                         }
                       },
@@ -187,7 +233,10 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                           itemBuilder: (BuildContext context, int index) {
                             final scannedItem = scannedItems![index];
                             return ListTile(
-                              title: Text(scannedItem.barcode, style: Theme.of(context).textTheme.displaySmall,),
+                              title: Text(
+                                scannedItem.barcode,
+                                style: Theme.of(context).textTheme.displaySmall,
+                              ),
                               subtitle: Text(scannedItem.created.format()),
                             );
                           }),
@@ -232,18 +281,73 @@ class ShapePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+class OverlayForeground extends StatelessWidget {
+  final Path path;
+  final bool? detected;
+  final bool? valid;
+
+  const OverlayForeground(this.path, {this.detected, this.valid, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final rect = path.getBounds();
+
+    final detectionColor = true == detected
+        ? true == valid
+            ? Colors.green.withOpacity(1)
+            : Colors.green.withOpacity(0.3)
+        : Colors.white.withOpacity(0.3);
+
+    final detectionIcon = Icon(
+      Icons.remove_red_eye_outlined,
+      size: 32,
+      color: detectionColor,
+    );
+    return Stack(
+      children: [
+        PathPainter(
+          path: path,
+          pathPaint: Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = _strokeWidth
+            ..strokeCap = StrokeCap.round
+            ..color = Colors.white.withOpacity(0.3),
+        ),
+        Positioned(
+          left: rect.left,
+          top: rect.top - (detectionIcon.size ?? 0).toInt(),
+          child: detectionIcon,
+        ),
+      ],
+    );
+  }
+}
+
+class OverlayBackground extends StatelessWidget {
+  final Path path;
+
+  const OverlayBackground(this.path, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PathPainter(
+      path: path,
+      pathPaint: Paint()..color = Colors.black,
+    );
+  }
+}
+
 class MobileScannerOverlay extends StatelessWidget {
-  final bool active;
   final Widget background;
   final Widget? foreground;
   final Color color;
 
-  const MobileScannerOverlay(
-      {required this.active,
-      required this.background,
-      this.foreground,
-      required this.color,
-      super.key});
+  const MobileScannerOverlay({
+    required this.background,
+    this.foreground,
+    required this.color,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
