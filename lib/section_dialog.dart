@@ -61,7 +61,7 @@ class _SectionDialogState extends State<SectionDialog> {
                       widget.projectId,
                       sectionNameController.text,
                       noteController.text,
-                      DateTime.now(),
+                      widget.section?.created ?? DateTime.now(),
                     ));
                   },
             child: widget.section != null
