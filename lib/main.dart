@@ -16,7 +16,7 @@ class StockBarcodeScannerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seedColor = Colors.indigoAccent;
+    const seedColor = Color.fromARGB(255, 17, 111, 7);
     return MaterialApp(
       title: 'Stock Barcode Scanner',
       theme: ThemeData(
