@@ -41,12 +41,25 @@ class _SectionsScreenChild extends StatefulWidget {
 }
 
 class _SectionsScreenChildState extends State<_SectionsScreenChild> {
-  List<Section>? sections;
+  List<ExportSection>? sections;
+
+  void _readSections() {
+    sections = DbConnector.getSections(widget._projectId)
+        .map((e) => ExportSection(e))
+        .toList(growable: false);
+    sections?.sort((s1, s2) {
+      if (s1.section.created == s2.section.created) {
+        return s1.items.length - s2.items.length;
+      }
+      return s2.section.created.millisecondsSinceEpoch -
+          s1.section.created.millisecondsSinceEpoch;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    sections = DbConnector.getSections(widget._projectId);
+    _readSections();
   }
 
   @override
@@ -69,7 +82,7 @@ class _SectionsScreenChildState extends State<_SectionsScreenChild> {
     }
 
     setState(() {
-      sections = DbConnector.getSections(widget._projectId);
+      _readSections();
     });
   }
 
@@ -89,27 +102,27 @@ class _SectionsScreenChildState extends State<_SectionsScreenChild> {
                   itemBuilder: (BuildContext context, int index) {
                     final section = sections!.elementAt(index);
                     return SectionCard(
-                      section: section,
+                      exportSection: section,
                       onScan: () {
                         Navigator.pushNamed(
                           context,
                           ScannerScreen.routeName,
                           arguments: ScannerScreenArguments(
-                            section,
+                            section.section,
                           ),
                         );
                       },
                       onDelete: () {
-                        DbConnector.deleteSection(section);
+                        DbConnector.deleteSection(section.section);
                         setState(() {
-                          sections = DbConnector.getSections(widget._projectId);
+                          _readSections();
                         });
                       },
                       onEdit: () async {
-                        await _sectionDialog(section);
+                        await _sectionDialog(section.section);
                       },
                       onExport: () async {
-                        await export(section);
+                        await export(section.section);
                       },
                     );
                   }),
@@ -127,14 +140,14 @@ class _SectionsScreenChildState extends State<_SectionsScreenChild> {
 }
 
 class SectionCard extends StatelessWidget {
-  final Section section;
+  final ExportSection exportSection;
   final void Function()? onScan;
   final void Function()? onDelete;
   final void Function()? onEdit;
   final void Function()? onExport;
 
   const SectionCard({
-    required this.section,
+    required this.exportSection,
     this.onScan,
     this.onExport,
     this.onDelete,
@@ -144,8 +157,6 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exportSection = ExportSection(section);
-
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 10,
@@ -161,7 +172,7 @@ class SectionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  section.name,
+                  exportSection.section.name,
                   style: Theme.of(context)
                       .textTheme
                       .displayLarge
@@ -174,7 +185,7 @@ class SectionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Description: ${section.note}',
+                        'Description: ${exportSection.section.note}',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       const SizedBox(
