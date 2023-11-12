@@ -90,12 +90,10 @@ class _ProjectList extends ConsumerWidget {
           subtitle: Text(
               'Owner: ${project.owner}\nCreated: ${project.created.format()}'),
           onTap: () {
+            ref.read(projectIdProvider.notifier).state = project.id;
             Navigator.pushNamed(
               context,
               SectionsScreen.routeName,
-              arguments: SectionsScreenArguments(
-                project.id,
-              ),
             );
           },
         );

@@ -4,10 +4,9 @@ import '../domain/models.dart';
 
 class SectionDialog extends StatefulWidget {
   final Section? section;
-  final int projectId;
+  final int? projectId;
 
-  const SectionDialog(
-      {super.key, required this.section, required this.projectId});
+  const SectionDialog({super.key, this.section, this.projectId});
 
   @override
   State<SectionDialog> createState() => _SectionDialogState();
@@ -56,13 +55,22 @@ class _SectionDialogState extends State<SectionDialog> {
             onPressed: !enabled
                 ? null
                 : () {
-                    Navigator.of(context).pop(Section(
-                      widget.section?.id ?? 0,
-                      widget.projectId,
-                      sectionNameController.text,
-                      noteController.text,
-                      widget.section?.created ?? DateTime.now(),
-                    ));
+                    final section = widget.section != null
+                        ? Section(
+                            widget.section!.id,
+                            widget.section!.projectId,
+                            sectionNameController.text,
+                            noteController.text,
+                            widget.section!.created,
+                          )
+                        : Section(
+                            0,
+                            widget.projectId!,
+                            sectionNameController.text,
+                            noteController.text,
+                            DateTime.now(),
+                          );
+                    Navigator.of(context).pop(section);
                   },
             child: widget.section != null
                 ? const Text('Update')

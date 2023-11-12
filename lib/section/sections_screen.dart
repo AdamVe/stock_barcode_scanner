@@ -1,142 +1,145 @@
 import 'package:flutter/material.dart';
-import 'package:stock_barcode_scanner/date_time_ext.dart';
-import 'package:stock_barcode_scanner/data/db.dart';
-import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
-import 'package:stock_barcode_scanner/section/section_dialog.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../export.dart';
+import '../data/item_repository.dart';
+import '../date_time_ext.dart';
 import '../domain/models.dart';
+import '../export.dart';
+import '../scanner/scanner_screen.dart';
+import 'section_dialog.dart';
 
-enum SectionAction {
-  actionEditSection,
-  actionDeleteSection,
-  actionExportSection
-}
+part 'sections_screen.g.dart';
 
-class SectionsScreenArguments {
-  final int projectId;
+enum _SectionAction { actionEditSection, actionDeleteSection }
 
-  const SectionsScreenArguments(this.projectId);
-}
+final projectIdProvider = StateProvider<int>((ref) => 0);
 
-class SectionsScreen extends StatelessWidget {
-  const SectionsScreen({super.key});
-
-  static const String routeName = '/sections';
-
-  @override
-  Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)!.settings.arguments as SectionsScreenArguments;
-    return _SectionsScreenChild(args.projectId);
-  }
-}
-
-class _SectionsScreenChild extends StatefulWidget {
-  final int _projectId;
-
-  const _SectionsScreenChild(this._projectId);
-
-  @override
-  State<_SectionsScreenChild> createState() => _SectionsScreenChildState();
-}
-
-class _SectionsScreenChildState extends State<_SectionsScreenChild> {
-  List<ExportSection>? sections;
-
-  void _readSections() {
-    sections = DbConnector.getSections(widget._projectId)
+@riverpod
+class _Controller extends _$Controller {
+  Future<List<ExportSection>> _read() async {
+    final projectId = ref.watch(projectIdProvider);
+    final sections = (await ref
+            .read(itemRepositoryProvider)
+            .getSections(projectId: projectId))
         .map((e) => ExportSection(e))
         .toList(growable: false);
-    sections?.sort((s1, s2) {
+    sections.sort((s1, s2) {
       if (s1.section.created == s2.section.created) {
         return s1.items.length - s2.items.length;
       }
       return s2.section.created.millisecondsSinceEpoch -
           s1.section.created.millisecondsSinceEpoch;
     });
+    return sections;
   }
 
   @override
-  void initState() {
-    super.initState();
-    _readSections();
+  FutureOr<List<ExportSection>> build() {
+    return _read();
   }
+
+  Future<void> updateSection(Section section) async {
+    await ref.read(itemRepositoryProvider).updateSection(section: section);
+    await loadSections();
+  }
+
+  Future<void> addSection(Section section) async {
+    await ref.read(itemRepositoryProvider).addSection(section: section);
+    await loadSections();
+  }
+
+  Future<void> deleteSection(Section section) async {
+    await ref.read(itemRepositoryProvider).deleteSection(section: section);
+    await loadSections();
+  }
+
+  Future<void> loadSections() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _read());
+  }
+}
+
+class SectionsScreen extends ConsumerWidget {
+  const SectionsScreen({super.key});
+
+  static const String routeName = '/sections';
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _sectionDialog(Section? originalSection) async {
-    Section? section = await showAdaptiveDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return SectionDialog(
-              section: originalSection, projectId: widget._projectId);
-        });
-
-    if (originalSection != null && section != null) {
-      DbConnector.updateSection(section);
-    } else if (section != null) {
-      DbConnector.addSection(section);
-    }
-
-    setState(() {
-      _readSections();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(_controllerProvider);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Sections'),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                  itemCount: sections != null ? sections!.length : 0,
-                  itemBuilder: (BuildContext context, int index) {
-                    final section = sections!.elementAt(index);
-                    return SectionCard(
-                      exportSection: section,
-                      onScan: () {
-                        Navigator.pushNamed(
-                          context,
-                          ScannerScreen.routeName,
-                          arguments: ScannerScreenArguments(
-                            section.section,
-                          ),
-                        );
-                      },
-                      onDelete: () {
-                        DbConnector.deleteSection(section.section);
-                        setState(() {
-                          _readSections();
-                        });
-                      },
-                      onEdit: () async {
-                        await _sectionDialog(section.section);
-                      },
-                      onExport: () async {
-                        await export(section.section);
-                      },
-                    );
-                  }),
-            ),
-          ],
-        ),
+        child: state.when(
+            error: (e, st) => Text('ERROR: $st'),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            data: (sections) => _SectionList(sections)),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async => await _sectionDialog(null),
+        onPressed: () async {
+          Section? section = await showAdaptiveDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return SectionDialog(projectId: ref.read(projectIdProvider));
+              });
+          if (section != null) {
+            ref.read(_controllerProvider.notifier).addSection(section);
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text('New section'),
       ),
     );
+  }
+}
+
+class _SectionList extends ConsumerWidget {
+  final List<ExportSection> sections;
+
+  const _SectionList(this.sections);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView.builder(
+        itemCount: sections.length,
+        itemBuilder: (BuildContext context, int index) {
+          final section = sections.elementAt(index);
+          return SectionCard(
+            exportSection: section,
+            onScan: () {
+              Navigator.pushNamed(
+                context,
+                ScannerScreen.routeName,
+                arguments: ScannerScreenArguments(
+                  section.section,
+                ),
+              );
+            },
+            onDelete: () {
+              ref
+                  .read(_controllerProvider.notifier)
+                  .deleteSection(section.section);
+            },
+            onEdit: () async {
+              final originalSection = sections.elementAt(index).section;
+              Section? section = await showAdaptiveDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SectionDialog(section: originalSection);
+                  });
+              if (section != null) {
+                ref.read(_controllerProvider.notifier).updateSection(section);
+              }
+            },
+            onExport: () async {
+              await export(section.section);
+            },
+          );
+        });
   }
 }
 
@@ -225,20 +228,20 @@ class SectionCard extends StatelessWidget {
               IconButton(
                   onPressed: () async => onExport?.call(),
                   icon: const Icon(Icons.ios_share)),
-              PopupMenuButton<SectionAction>(
+              PopupMenuButton<_SectionAction>(
                 itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<SectionAction>(
-                      value: SectionAction.actionEditSection,
+                  const PopupMenuItem<_SectionAction>(
+                      value: _SectionAction.actionEditSection,
                       child: Text('Edit')),
-                  const PopupMenuItem<SectionAction>(
-                      value: SectionAction.actionDeleteSection,
+                  const PopupMenuItem<_SectionAction>(
+                      value: _SectionAction.actionDeleteSection,
                       child: Text('Delete'))
                 ],
-                onSelected: (SectionAction sectionAction) async {
+                onSelected: (_SectionAction sectionAction) async {
                   switch (sectionAction) {
-                    case SectionAction.actionEditSection:
+                    case _SectionAction.actionEditSection:
                       onEdit?.call();
-                    case SectionAction.actionDeleteSection:
+                    case _SectionAction.actionDeleteSection:
                       onDelete?.call();
                     default:
                   }
