@@ -41,8 +41,8 @@ class SqliteItemRepository extends ItemRepository {
   }
 
   @override
-  Future<List<ScannedItem>> getScans({required int projectId}) async {
-    return DbConnector.getScannedItems(projectId);
+  Future<List<ScannedItem>> getScans({required int sectionId}) async {
+    return DbConnector.getScannedItems(sectionId);
   }
 
   @override

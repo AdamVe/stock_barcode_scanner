@@ -23,7 +23,7 @@ abstract class ItemRepository {
 
   Future<void> deleteSection({required Section section});
 
-  Future<List<ScannedItem>> getScans({required int projectId});
+  Future<List<ScannedItem>> getScans({required int sectionId});
 
   Future<int> addScan({required ScannedItem scan});
 

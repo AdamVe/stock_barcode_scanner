@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/project/project_dialog.dart';
 import 'package:stock_barcode_scanner/section/sections_screen.dart';
 
@@ -94,7 +94,7 @@ class _ProjectList extends ConsumerWidget {
             Navigator.pushNamed(
               context,
               SectionsScreen.routeName,
-            );
+            ).then((value) => ref.invalidate(_controllerProvider));
           },
         );
       });

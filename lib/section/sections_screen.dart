@@ -111,13 +111,11 @@ class _SectionList extends ConsumerWidget {
           return SectionCard(
             exportSection: section,
             onScan: () {
+              ref.read(sectionProvider.notifier).state = section.section;
               Navigator.pushNamed(
                 context,
                 ScannerScreen.routeName,
-                arguments: ScannerScreenArguments(
-                  section.section,
-                ),
-              );
+              ).then((value) => ref.invalidate(_controllerProvider));
             },
             onDelete: () {
               ref

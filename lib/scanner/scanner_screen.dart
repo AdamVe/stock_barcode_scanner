@@ -3,50 +3,74 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:stock_barcode_scanner/date_time_ext.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../data/db.dart';
+import '../data/item_repository.dart';
+import '../date_time_ext.dart';
 import '../domain/models.dart';
+
+part 'scanner_screen.g.dart';
 
 const _strokeWidth = 3.0;
 
-class ScannerScreenArguments {
-  final Section section;
+final sectionProvider =
+    StateProvider<Section>((ref) => Section(0, 0, '', '', DateTime(0)));
 
-  ScannerScreenArguments(this.section);
+final duplicateProvider = StateProvider((ref) => false);
+
+@riverpod
+class _Controller extends _$Controller {
+  Future<List<ScannedItem>> _read() async {
+    final sectionId = ref.watch(sectionProvider).id;
+    return ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
+  }
+
+  @override
+  FutureOr<List<ScannedItem>> build() {
+    return _read();
+  }
+
+  Future<void> updateScannedItem(ScannedItem scannedItem) async {
+    await ref.read(itemRepositoryProvider).updateScan(scan: scannedItem);
+    await loadScannedItems();
+  }
+
+  Future<int> addScannedItem(ScannedItem scannedItem) async {
+    int id = await ref.read(itemRepositoryProvider).addScan(scan: scannedItem);
+    await loadScannedItems();
+    return id;
+  }
+
+  Future<void> deleteScannedItem(ScannedItem scannedItem) async {
+    await ref.read(itemRepositoryProvider).deleteScan(scan: scannedItem);
+    await loadScannedItems();
+  }
+
+  Future<void> loadScannedItems() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _read());
+  }
 }
 
-class ScannerScreen extends StatelessWidget {
+class ScannerScreen extends ConsumerStatefulWidget {
   static const routeName = '/scanner';
 
   const ScannerScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)!.settings.arguments as ScannerScreenArguments;
-    return _ScannerScreenChild(section: args.section);
-  }
+  ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
 }
 
-class _ScannerScreenChild extends StatefulWidget {
-  final Section section;
-
-  const _ScannerScreenChild({required this.section});
-
-  @override
-  State<_ScannerScreenChild> createState() => _ScannerScreenChildState();
-}
-
-class _ScannerScreenChildState extends State<_ScannerScreenChild> {
+class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   bool _detected = false;
   bool _valid = false;
   Timer? _timer;
   Barcode? _lastBarcode;
   int _lastCodeCount = 1;
   int _insertedScanItemId = 0;
-  List<ScannedItem>? _scannedItems;
+  bool _showThatWeSawDuplicate = true;
 
   Rect _getScanRect(double width, double height) {
     final center = Offset(width / 2, 160);
@@ -102,14 +126,28 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
       ], false);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _scannedItems = DbConnector.getScannedItems(widget.section.id);
+  void _duplicateVibrate() {
+    HapticFeedback.heavyImpact();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        HapticFeedback.heavyImpact();
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            HapticFeedback.heavyImpact();
+            Future.delayed(const Duration(milliseconds: 100), () {
+              if (mounted) {
+                HapticFeedback.heavyImpact();
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(_controllerProvider);
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 350,
@@ -118,7 +156,8 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
     return Theme(
       data: ThemeData.dark(useMaterial3: true),
       child: Scaffold(
-        appBar: AppBar(title: Text('Section: ${widget.section.name}')),
+        appBar:
+            AppBar(title: Text('Section: ${ref.read(sectionProvider).name}')),
         body: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -145,7 +184,7 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                         color: Colors.black.withOpacity(0.6),
                       ),
                       scanWindow: scanRect,
-                      onDetect: (capture) {
+                      onDetect: (capture) async {
                         bool detected = false;
                         bool valid = false;
                         Barcode? lastBarcode = _lastBarcode;
@@ -167,6 +206,9 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
 
                         if (currentBarcode != null &&
                             currentBarcode.rawValue != lastBarcode?.rawValue) {
+                          setState(() {
+                            _showThatWeSawDuplicate = false;
+                          });
                           if (kDebugMode) {
                             print(
                                 'Found new barcode: ${currentBarcode.displayValue}');
@@ -174,20 +216,35 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
 
                           // add this barcode
                           HapticFeedback.mediumImpact();
-                          insertedScanItemId =
-                              DbConnector.addScannedItem(ScannedItem(
-                            0,
-                            widget.section.id,
-                            currentBarcode.rawValue!,
-                            DateTime.now(),
-                            1,
-                          ));
+                          insertedScanItemId = await ref
+                              .read(_controllerProvider.notifier)
+                              .addScannedItem(ScannedItem(
+                                0,
+                                ref.read(sectionProvider).id,
+                                currentBarcode.rawValue!,
+                                DateTime.now(),
+                                1,
+                              ));
 
                           lastCodeCount = 1;
                         } else {
                           if (currentBarcode != null &&
                               currentBarcode.rawValue ==
                                   lastBarcode?.rawValue) {
+                            if (_showThatWeSawDuplicate) {
+                              _duplicateVibrate();
+                              ref.read(duplicateProvider.notifier).state = true;
+                              setState(() {
+                                _showThatWeSawDuplicate = false;
+                              });
+                              Future.delayed(const Duration(milliseconds: 300),
+                                  () {
+                                if (mounted) {
+                                  ref.read(duplicateProvider.notifier).state =
+                                      false;
+                                }
+                              });
+                            }
                             if (kDebugMode) {
                               print(
                                   'See old barcode: ${currentBarcode.displayValue}');
@@ -205,8 +262,6 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                             _lastBarcode = lastBarcode;
                             _lastCodeCount = lastCodeCount;
                             _insertedScanItemId = insertedScanItemId;
-                            _scannedItems =
-                                DbConnector.getScannedItems(widget.section.id);
                           });
                         } else {
                           _timer?.cancel();
@@ -215,139 +270,193 @@ class _ScannerScreenChildState extends State<_ScannerScreenChild> {
                               _detected = false;
                               _valid = false;
                               _lastBarcode = lastBarcode;
+                              _showThatWeSawDuplicate = true;
                             });
                           });
                         }
                       },
                     ),
-                    if (_lastBarcode != null && _lastBarcode?.rawValue != null)
-                      PositionedDirectional(
-                          start: 0,
-                          end: 0,
-                          bottom: 30,
-                          child: Column(
-                            children: [
-                              Text(
-                                _lastBarcode!.rawValue!,
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall,
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.max,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                      onPressed: _lastCodeCount > 1
-                                          ? () {
-                                              int lastCodeCount =
-                                                  _lastCodeCount - 1;
-                                              // add this barcode
-                                              HapticFeedback.mediumImpact();
-                                              DbConnector.updateScannedItem(
-                                                  ScannedItem(
-                                                _insertedScanItemId,
-                                                widget.section.id,
-                                                _lastBarcode!.rawValue!,
-                                                DateTime.now(),
-                                                lastCodeCount,
-                                              ));
-
-                                              setState(() {
-                                                _lastCodeCount = lastCodeCount;
-                                                _scannedItems =
-                                                    DbConnector.getScannedItems(
-                                                        widget.section.id);
-                                              });
-                                            }
-                                          : null,
-                                      child: const Icon(Icons.remove)),
-                                  SizedBox(
-                                      width: 64,
-                                      child: Text(
-                                        _lastCodeCount.toString(),
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall,
-                                      )),
-                                  ElevatedButton(
-                                      onPressed: _lastCodeCount < 1000
-                                          ? () {
-                                              int lastCodeCount =
-                                                  _lastCodeCount + 1;
-                                              // add this barcode
-                                              HapticFeedback.mediumImpact();
-                                              DbConnector.updateScannedItem(
-                                                  ScannedItem(
-                                                _insertedScanItemId,
-                                                widget.section.id,
-                                                _lastBarcode!.rawValue!,
-                                                DateTime.now(),
-                                                lastCodeCount,
-                                              ));
-
-                                              setState(() {
-                                                _lastCodeCount = lastCodeCount;
-                                                _scannedItems =
-                                                    DbConnector.getScannedItems(
-                                                        widget.section.id);
-                                              });
-                                            }
-                                          : null,
-                                      child: const Icon(Icons.add)),
-                                ],
-                              ),
-                            ],
-                          ))
+                    _CountAdjuster(
+                        _lastBarcode, _insertedScanItemId, _lastCodeCount,
+                        onUpdated: (newCount) =>
+                            setState(() => _lastCodeCount = newCount)),
                   ]);
                 }),
               ),
-              Builder(builder: (context) {
-                return Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.document_scanner_outlined),
-                      title: const Text('Items'),
-                      subtitle: Text('Count: ${_scannedItems?.length ?? 0}'),
-                    ),
-                    SizedBox(
-                      height: 250,
-                      child: ListView.builder(
-                          itemCount: _scannedItems?.length ?? 0,
-                          itemBuilder: (BuildContext context, int index) {
-                            final scannedItem = _scannedItems![index];
-                            return ListTile(
-                              title: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 32,
-                                    child: scannedItem.count > 1
-                                        ? Text('${scannedItem.count} \u00d7')
-                                        : const Text(''),
-                                  ),
-                                  const SizedBox(
-                                    width: 8,
-                                  ),
-                                  Text(
-                                    scannedItem.barcode,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displaySmall,
-                                  ),
-                                ],
-                              ),
-                              subtitle: Text(scannedItem.created.format()),
-                            );
-                          }),
-                    ),
-                  ],
-                );
-              })
+              state.when(
+                error: (e, st) => Center(child: Text('Error: $st')),
+                loading: () => const CircularProgressIndicator(),
+                data: (scannedItems) => _ScannedItemList(scannedItems),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _CountAdjuster extends ConsumerWidget {
+  final Barcode? _lastBarcode;
+  final int _insertedScanItemId;
+  final int _lastCodeCount;
+  final void Function(int)? onUpdated;
+
+  const _CountAdjuster(
+    this._lastBarcode,
+    this._insertedScanItemId,
+    this._lastCodeCount, {
+    this.onUpdated,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (_lastBarcode != null && _lastBarcode?.rawValue != null) {
+      final isDuplicate = ref.watch(duplicateProvider);
+      return PositionedDirectional(
+          start: 0,
+          end: 0,
+          bottom: 30,
+          child: Column(
+            children: [
+              Text(
+                _lastBarcode!.rawValue!,
+                style: isDuplicate
+                    ? Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.green, fontWeight: FontWeight.bold)
+                    : Theme.of(context).textTheme.headlineMedium,
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                      onPressed: _lastCodeCount > 1
+                          ? () {
+                              int lastCodeCount = _lastCodeCount - 1;
+                              HapticFeedback.mediumImpact();
+                              // add this barcode
+                              ref
+                                  .read(_controllerProvider.notifier)
+                                  .updateScannedItem(ScannedItem(
+                                    _insertedScanItemId,
+                                    ref.read(sectionProvider).id,
+                                    _lastBarcode!.rawValue!,
+                                    DateTime.now(),
+                                    lastCodeCount,
+                                  ));
+
+                              onUpdated?.call(lastCodeCount);
+                            }
+                          : null,
+                      child: const Icon(Icons.remove)),
+                  SizedBox(
+                      width: 64,
+                      child: Text(
+                        _lastCodeCount.toString(),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      )),
+                  ElevatedButton(
+                      onPressed: _lastCodeCount < 1000
+                          ? () {
+                              int lastCodeCount = _lastCodeCount + 1;
+                              // add this barcode
+                              HapticFeedback.mediumImpact();
+                              ref
+                                  .read(_controllerProvider.notifier)
+                                  .updateScannedItem(ScannedItem(
+                                    _insertedScanItemId,
+                                    ref.read(sectionProvider).id,
+                                    _lastBarcode!.rawValue!,
+                                    DateTime.now(),
+                                    lastCodeCount,
+                                  ));
+
+                              onUpdated?.call(lastCodeCount);
+                            }
+                          : null,
+                      child: const Icon(Icons.add)),
+                ],
+              ),
+            ],
+          ));
+    } else {
+      return const SizedBox(
+        width: 10,
+      );
+    }
+  }
+}
+
+class _ScannedItemList extends ConsumerWidget {
+  final List<ScannedItem> _scannedItems;
+
+  const _ScannedItemList(this._scannedItems);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Builder(builder: (context) {
+      return Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.document_scanner_outlined),
+            title: const Text('Items'),
+            subtitle: Text('Count: ${_scannedItems.length}'),
+          ),
+          SizedBox(
+            height: 250,
+            child: ListView.builder(
+                itemCount: _scannedItems.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final scannedItem = _scannedItems[index];
+                  final sum = _scannedItems
+                      .where((i) => i.barcode == scannedItem.barcode)
+                      .fold(0, (previousValue, i) => previousValue + i.count);
+                  return ListTile(
+                    title: Row(
+                      children: [
+                        SizedBox(
+                          width: 32,
+                          child: scannedItem.count > 1
+                              ? Text('${scannedItem.count} \u00d7')
+                              : const Text(''),
+                        ),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          scannedItem.barcode,
+                          style: Theme.of(context).textTheme.displaySmall,
+                        ),
+                        const Spacer(),
+                        IconButton(
+                            onPressed: () {
+                              ref
+                                  .read(_controllerProvider.notifier)
+                                  .deleteScannedItem(scannedItem);
+                            },
+                            icon: const Icon(Icons.delete_outline_outlined))
+                      ],
+                    ),
+                    subtitle: Row(
+                      children: [
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        Text(scannedItem.created.format()),
+                        const SizedBox(
+                          width: 32,
+                        ),
+                        Text('Sum: $sum')
+                      ],
+                    ),
+                  );
+                }),
+          ),
+        ],
+      );
+    });
   }
 }
 
