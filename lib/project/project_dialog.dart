@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'db.dart';
+import '../domain/models.dart';
 
 class ProjectDialog extends StatefulWidget {
   final Project? project;
 
-  const ProjectDialog({super.key, this.project});
+  const ProjectDialog({this.project, super.key});
 
   @override
   State<ProjectDialog> createState() => _ProjectDialogState();

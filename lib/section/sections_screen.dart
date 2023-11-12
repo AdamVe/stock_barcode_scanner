@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
-import 'package:stock_barcode_scanner/db.dart';
-import 'package:stock_barcode_scanner/scanner_screen.dart';
-import 'package:stock_barcode_scanner/section_dialog.dart';
+import 'package:stock_barcode_scanner/data/db.dart';
+import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+import 'package:stock_barcode_scanner/section/section_dialog.dart';
 
-import 'export.dart';
+import '../export.dart';
+import '../domain/models.dart';
 
 enum SectionAction {
   actionEditSection,

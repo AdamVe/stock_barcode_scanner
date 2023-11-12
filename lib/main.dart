@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:stock_barcode_scanner/scanner_screen.dart';
-import 'package:stock_barcode_scanner/sections_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stock_barcode_scanner/data/item_repository.dart';
+import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+import 'package:stock_barcode_scanner/section/sections_screen.dart';
+import 'package:stock_barcode_scanner/data/sqlite_item_repository.dart';
 
-import 'db.dart';
-import 'projects_screen.dart';
+import 'data/db.dart';
+import 'project/projects_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DbConnector.init();
-  runApp(const StockBarcodeScannerApp());
+  runApp(ProviderScope(
+    overrides: [
+      itemRepositoryProvider.overrideWith((ref) => SqliteItemRepository())
+    ],
+    child: const StockBarcodeScannerApp(),
+  ));
 }
 
 class StockBarcodeScannerApp extends StatelessWidget {

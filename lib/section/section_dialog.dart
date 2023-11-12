@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'db.dart';
+import '../domain/models.dart';
 
 class SectionDialog extends StatefulWidget {
   final Section? section;

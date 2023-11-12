@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 
-import 'db.dart';
+import '../data/db.dart';
+import '../domain/models.dart';
 
 const _strokeWidth = 3.0;
 
