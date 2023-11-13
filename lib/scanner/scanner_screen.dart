@@ -30,7 +30,7 @@ class _Controller extends _$Controller {
   @override
   FutureOr<List<ScannedItem>> build() {
     ref.invalidate(duplicateProvider);
-    ref.invalidate(scanCountProvider);
+    ref.invalidate(barcodeProvider);
     return _read();
   }
 
@@ -224,8 +224,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                                 1,
                               ));
 
-                          ref.read(scanCountProvider.notifier).state =
-                              ScanCount(rowId, currentBarcode.rawValue!, 1);
+                          ref.read(barcodeProvider.notifier).state =
+                              BarcodeData(rowId, currentBarcode.rawValue!, 1);
                         } else {
                           if (currentBarcode != null &&
                               currentBarcode.rawValue ==
@@ -290,40 +290,40 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   }
 }
 
-class ScanCount {
+class BarcodeData {
   int rowId;
-  String barcode;
+  String value;
   int count;
 
-  ScanCount(this.rowId, this.barcode, this.count);
+  BarcodeData(this.rowId, this.value, this.count);
 }
 
-final scanCountProvider =
-    StateProvider<ScanCount>((ref) => ScanCount(0, '', 0));
+final barcodeProvider =
+    StateProvider<BarcodeData>((ref) => BarcodeData(0, '', 0));
 
 class _AdjustScanCountWidget extends ConsumerWidget {
   const _AdjustScanCountWidget();
 
   void _update(WidgetRef ref, int amount) {
     final sectionId = ref.read(sectionProvider).id;
-    final scanCount = ref.read(scanCountProvider);
-    int count = scanCount.count + amount;
+    final barcode = ref.read(barcodeProvider);
+    int count = barcode.count + amount;
     HapticFeedback.mediumImpact();
     ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
-          scanCount.rowId,
+          barcode.rowId,
           sectionId,
-          scanCount.barcode,
+          barcode.value,
           DateTime.now(),
           count,
         ));
 
-    ref.read(scanCountProvider.notifier).state =
-        ScanCount(scanCount.rowId, scanCount.barcode, count);
+    ref.read(barcodeProvider.notifier).state =
+        BarcodeData(barcode.rowId, barcode.value, count);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scanCount = ref.watch(scanCountProvider);
+    final barcode = ref.watch(barcodeProvider);
     final isDuplicate = ref.watch(duplicateProvider);
     return PositionedDirectional(
         start: 0,
@@ -332,20 +332,20 @@ class _AdjustScanCountWidget extends ConsumerWidget {
         child: Column(
           children: [
             Text(
-              scanCount.barcode,
+              barcode.value,
               style: isDuplicate
                   ? Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: Colors.green, fontWeight: FontWeight.bold)
                   : Theme.of(context).textTheme.headlineMedium,
             ),
-            if (scanCount.barcode.isNotEmpty)
+            if (barcode.value.isNotEmpty)
               Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
                       onPressed:
-                          scanCount.count > 1 ? () => _update(ref, -1) : null,
+                          barcode.count > 1 ? () => _update(ref, -1) : null,
                       child: const Icon(
                         Icons.remove,
                         size: 32,
@@ -353,13 +353,13 @@ class _AdjustScanCountWidget extends ConsumerWidget {
                   SizedBox(
                       width: 64,
                       child: Text(
-                        scanCount.count.toString(),
+                        barcode.count.toString(),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall,
                       )),
                   ElevatedButton(
                       onPressed:
-                          scanCount.count < 1000 ? () => _update(ref, 1) : null,
+                          barcode.count < 1000 ? () => _update(ref, 1) : null,
                       child: const Icon(
                         Icons.add,
                         size: 32,
