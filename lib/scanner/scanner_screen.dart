@@ -68,8 +68,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   bool _valid = false;
   Timer? _timer;
   Barcode? _lastBarcode;
-  int _lastCodeCount = 1;
-  int _insertedScanItemId = 0;
   bool _showThatWeSawDuplicate = true;
 
   Rect _getScanRect(double width, double height) {
@@ -188,8 +186,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                         bool detected = false;
                         bool valid = false;
                         Barcode? lastBarcode = _lastBarcode;
-                        int lastCodeCount = _lastCodeCount;
-                        int insertedScanItemId = _insertedScanItemId;
                         final List<Barcode> barcodes = capture.barcodes;
                         if (barcodes.isNotEmpty) {
                           detected = true;
@@ -216,7 +212,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
                           // add this barcode
                           HapticFeedback.mediumImpact();
-                          insertedScanItemId = await ref
+                          int rowId = await ref
                               .read(_controllerProvider.notifier)
                               .addScannedItem(ScannedItem(
                                 0,
@@ -226,7 +222,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                                 1,
                               ));
 
-                          lastCodeCount = 1;
+                          ref.read(scanCountProvider.notifier).state =
+                              ScanCount(rowId, currentBarcode.rawValue!, 1);
                         } else {
                           if (currentBarcode != null &&
                               currentBarcode.rawValue ==
@@ -260,8 +257,6 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                             _detected = detected;
                             _valid = valid;
                             _lastBarcode = lastBarcode;
-                            _lastCodeCount = lastCodeCount;
-                            _insertedScanItemId = insertedScanItemId;
                           });
                         } else {
                           _timer?.cancel();
@@ -276,10 +271,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                         }
                       },
                     ),
-                    _CountAdjuster(
-                        _lastBarcode, _insertedScanItemId, _lastCodeCount,
-                        onUpdated: (newCount) =>
-                            setState(() => _lastCodeCount = newCount)),
+                    const _AdjustScanCountWidget(),
                   ]);
                 }),
               ),
@@ -296,96 +288,77 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   }
 }
 
-class _CountAdjuster extends ConsumerWidget {
-  final Barcode? _lastBarcode;
-  final int _insertedScanItemId;
-  final int _lastCodeCount;
-  final void Function(int)? onUpdated;
+class ScanCount {
+  int rowId;
+  String barcode;
+  int count;
 
-  const _CountAdjuster(
-    this._lastBarcode,
-    this._insertedScanItemId,
-    this._lastCodeCount, {
-    this.onUpdated,
-  });
+  ScanCount(this.rowId, this.barcode, this.count);
+}
+
+final scanCountProvider =
+    StateProvider<ScanCount>((ref) => ScanCount(0, '', 0));
+
+class _AdjustScanCountWidget extends ConsumerWidget {
+  const _AdjustScanCountWidget();
+
+  void _update(WidgetRef ref, int amount) {
+    final sectionId = ref.read(sectionProvider).id;
+    final scanCount = ref.read(scanCountProvider);
+    int count = scanCount.count + amount;
+    HapticFeedback.mediumImpact();
+    ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
+          scanCount.rowId,
+          sectionId,
+          scanCount.barcode,
+          DateTime.now(),
+          count,
+        ));
+
+    ref.read(scanCountProvider.notifier).state =
+        ScanCount(scanCount.rowId, scanCount.barcode, count);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (_lastBarcode != null && _lastBarcode?.rawValue != null) {
-      final isDuplicate = ref.watch(duplicateProvider);
-      return PositionedDirectional(
-          start: 0,
-          end: 0,
-          bottom: 30,
-          child: Column(
-            children: [
-              Text(
-                _lastBarcode!.rawValue!,
-                style: isDuplicate
-                    ? Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.green, fontWeight: FontWeight.bold)
-                    : Theme.of(context).textTheme.headlineMedium,
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                      onPressed: _lastCodeCount > 1
-                          ? () {
-                              int lastCodeCount = _lastCodeCount - 1;
-                              HapticFeedback.mediumImpact();
-                              // add this barcode
-                              ref
-                                  .read(_controllerProvider.notifier)
-                                  .updateScannedItem(ScannedItem(
-                                    _insertedScanItemId,
-                                    ref.read(sectionProvider).id,
-                                    _lastBarcode!.rawValue!,
-                                    DateTime.now(),
-                                    lastCodeCount,
-                                  ));
-
-                              onUpdated?.call(lastCodeCount);
-                            }
-                          : null,
-                      child: const Icon(Icons.remove)),
-                  SizedBox(
-                      width: 64,
-                      child: Text(
-                        _lastCodeCount.toString(),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      )),
-                  ElevatedButton(
-                      onPressed: _lastCodeCount < 1000
-                          ? () {
-                              int lastCodeCount = _lastCodeCount + 1;
-                              // add this barcode
-                              HapticFeedback.mediumImpact();
-                              ref
-                                  .read(_controllerProvider.notifier)
-                                  .updateScannedItem(ScannedItem(
-                                    _insertedScanItemId,
-                                    ref.read(sectionProvider).id,
-                                    _lastBarcode!.rawValue!,
-                                    DateTime.now(),
-                                    lastCodeCount,
-                                  ));
-
-                              onUpdated?.call(lastCodeCount);
-                            }
-                          : null,
-                      child: const Icon(Icons.add)),
-                ],
-              ),
-            ],
-          ));
-    } else {
-      return const SizedBox(
-        width: 10,
-      );
-    }
+    final scanCount = ref.watch(scanCountProvider);
+    final isDuplicate = ref.watch(duplicateProvider);
+    return PositionedDirectional(
+        start: 0,
+        end: 0,
+        bottom: 30,
+        child: Column(
+          children: [
+            Text(
+              scanCount.barcode,
+              style: isDuplicate
+                  ? Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.green, fontWeight: FontWeight.bold)
+                  : Theme.of(context).textTheme.headlineMedium,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    onPressed:
+                        scanCount.count > 1 ? () => _update(ref, -1) : null,
+                    child: const Icon(Icons.remove, size: 32,)),
+                SizedBox(
+                    width: 64,
+                    child: Text(
+                      scanCount.count.toString(),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    )),
+                ElevatedButton(
+                    onPressed:
+                        scanCount.count < 1000 ? () => _update(ref, 1) : null,
+                    child: const Icon(Icons.add, size: 32,)),
+              ],
+            ),
+          ],
+        ));
   }
 }
 
