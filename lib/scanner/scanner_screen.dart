@@ -29,6 +29,8 @@ class _Controller extends _$Controller {
 
   @override
   FutureOr<List<ScannedItem>> build() {
+    ref.invalidate(duplicateProvider);
+    ref.invalidate(scanCountProvider);
     return _read();
   }
 
@@ -336,27 +338,34 @@ class _AdjustScanCountWidget extends ConsumerWidget {
                       color: Colors.green, fontWeight: FontWeight.bold)
                   : Theme.of(context).textTheme.headlineMedium,
             ),
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                    onPressed:
-                        scanCount.count > 1 ? () => _update(ref, -1) : null,
-                    child: const Icon(Icons.remove, size: 32,)),
-                SizedBox(
-                    width: 64,
-                    child: Text(
-                      scanCount.count.toString(),
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    )),
-                ElevatedButton(
-                    onPressed:
-                        scanCount.count < 1000 ? () => _update(ref, 1) : null,
-                    child: const Icon(Icons.add, size: 32,)),
-              ],
-            ),
+            if (scanCount.barcode.isNotEmpty)
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                      onPressed:
+                          scanCount.count > 1 ? () => _update(ref, -1) : null,
+                      child: const Icon(
+                        Icons.remove,
+                        size: 32,
+                      )),
+                  SizedBox(
+                      width: 64,
+                      child: Text(
+                        scanCount.count.toString(),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      )),
+                  ElevatedButton(
+                      onPressed:
+                          scanCount.count < 1000 ? () => _update(ref, 1) : null,
+                      child: const Icon(
+                        Icons.add,
+                        size: 32,
+                      )),
+                ],
+              ),
           ],
         ));
   }
@@ -415,7 +424,7 @@ class _ScannedItemList extends ConsumerWidget {
                     subtitle: Row(
                       children: [
                         const SizedBox(
-                          width: 32,
+                          width: 40, // 32 + 8
                         ),
                         Text(scannedItem.created.format()),
                         const SizedBox(
