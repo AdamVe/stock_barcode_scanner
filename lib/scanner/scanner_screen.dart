@@ -23,7 +23,7 @@ final duplicateProvider = StateProvider((ref) => false);
 @riverpod
 class _Controller extends _$Controller {
   Future<List<ScannedItem>> _read() async {
-    final sectionId = ref.watch(sectionProvider).id;
+    final sectionId = ref.read(sectionProvider).id;
     return ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
   }
 
@@ -31,6 +31,8 @@ class _Controller extends _$Controller {
   FutureOr<List<ScannedItem>> build() {
     ref.invalidate(duplicateProvider);
     ref.invalidate(barcodeProvider);
+    ref.invalidate(detectedBarcodeProvider);
+    ref.invalidate(lastSeenBarcodeProvider);
     return _read();
   }
 
@@ -56,21 +58,12 @@ class _Controller extends _$Controller {
   }
 }
 
-class ScannerScreen extends ConsumerStatefulWidget {
+Timer? _timer;
+
+class ScannerScreen extends ConsumerWidget {
   static const routeName = '/scanner';
 
   const ScannerScreen({super.key});
-
-  @override
-  ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
-}
-
-class _ScannerScreenState extends ConsumerState<ScannerScreen> {
-  bool _detected = false;
-  bool _valid = false;
-  Timer? _timer;
-  Barcode? _lastBarcode;
-  bool _showThatWeSawDuplicate = true;
 
   Rect _getScanRect(double width, double height) {
     final center = Offset(width / 2, 160);
@@ -126,32 +119,59 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
       ], false);
   }
 
-  void _duplicateVibrate() {
-    HapticFeedback.heavyImpact();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) {
-            HapticFeedback.heavyImpact();
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (mounted) {
-                HapticFeedback.heavyImpact();
-              }
-            });
-          }
-        });
-      }
-    });
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(_controllerProvider);
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 350,
     );
+
+    ref.listen(detectedBarcodeProvider, (previous, next) async {
+      if (next.isEmpty) {
+        if (kDebugMode) {
+          print('No barcode detected');
+        }
+        return;
+      }
+
+      if (next != ref.read(lastSeenBarcodeProvider)) {
+        if (kDebugMode) {
+          print('Found new barcode: $next');
+        }
+
+        // add this barcode
+        HapticFeedback.mediumImpact();
+        int rowId = await ref
+            .read(_controllerProvider.notifier)
+            .addScannedItem(ScannedItem(
+              0,
+              ref.read(sectionProvider).id,
+              next,
+              DateTime.now(),
+              1,
+            ));
+
+        ref.read(barcodeProvider.notifier).state = BarcodeData(rowId, next, 1);
+      } else {
+        if (previous?.isEmpty ?? true) {
+          // TODO: _duplicateVibrate();
+          if (kDebugMode) {
+            print('Notifying duplicate scan');
+          }
+          ref.read(duplicateProvider.notifier).state = true;
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (kDebugMode) {
+              print('Clearing duplicate scan notification');
+            }
+            ref.read(duplicateProvider.notifier).state = false;
+          });
+        }
+        if (kDebugMode) {
+          print('See old barcode: $next');
+        }
+      }
+    });
 
     return Theme(
       data: ThemeData.dark(useMaterial3: true),
@@ -178,97 +198,35 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                         background: OverlayBackground(path),
                         foreground: OverlayForeground(
                           fgPath,
-                          detected: _detected,
-                          valid: _valid,
                         ),
                         color: Colors.black.withOpacity(0.6),
                       ),
                       scanWindow: scanRect,
                       onDetect: (capture) async {
-                        bool detected = false;
-                        bool valid = false;
-                        Barcode? lastBarcode = _lastBarcode;
-                        final List<Barcode> barcodes = capture.barcodes;
-                        if (barcodes.isNotEmpty) {
-                          detected = true;
-                        }
+                        final currentBarcode = capture.barcodes
+                                .where((element) =>
+                                    element.format == BarcodeFormat.ean13)
+                                .firstOrNull
+                                ?.rawValue! ??
+                            '';
 
-                        final currentBarcode = barcodes
-                            .where((element) =>
-                                element.format == BarcodeFormat.ean13)
-                            .firstOrNull;
-
-                        if (currentBarcode != null) {
-                          valid = true;
-                        }
-
-                        if (currentBarcode != null &&
-                            currentBarcode.rawValue != lastBarcode?.rawValue) {
-                          setState(() {
-                            _showThatWeSawDuplicate = false;
-                          });
-                          if (kDebugMode) {
-                            print(
-                                'Found new barcode: ${currentBarcode.displayValue}');
-                          }
-
-                          // add this barcode
-                          HapticFeedback.mediumImpact();
-                          int rowId = await ref
-                              .read(_controllerProvider.notifier)
-                              .addScannedItem(ScannedItem(
-                                0,
-                                ref.read(sectionProvider).id,
-                                currentBarcode.rawValue!,
-                                DateTime.now(),
-                                1,
-                              ));
-
-                          ref.read(barcodeProvider.notifier).state =
-                              BarcodeData(rowId, currentBarcode.rawValue!, 1);
-                        } else {
-                          if (currentBarcode != null &&
-                              currentBarcode.rawValue ==
-                                  lastBarcode?.rawValue) {
-                            if (_showThatWeSawDuplicate) {
-                              _duplicateVibrate();
-                              ref.read(duplicateProvider.notifier).state = true;
-                              setState(() {
-                                _showThatWeSawDuplicate = false;
-                              });
-                              Future.delayed(const Duration(milliseconds: 300),
-                                  () {
-                                if (mounted) {
-                                  ref.read(duplicateProvider.notifier).state =
-                                      false;
-                                }
-                              });
-                            }
-                            if (kDebugMode) {
-                              print(
-                                  'See old barcode: ${currentBarcode.displayValue}');
-                            }
-                          }
-                        }
-
-                        lastBarcode = currentBarcode;
-
-                        if (_detected != detected || _valid != valid) {
+                        if (currentBarcode.isNotEmpty) {
                           _timer?.cancel();
-                          setState(() {
-                            _detected = detected;
-                            _valid = valid;
-                            _lastBarcode = lastBarcode;
-                          });
-                        } else {
-                          _timer?.cancel();
+
+                          ref.read(detectedBarcodeProvider.notifier).state =
+                              currentBarcode;
+
+                          ref.read(lastSeenBarcodeProvider.notifier).state =
+                              currentBarcode;
+
+                          // start timer to clear the code if not detected
                           _timer = Timer(const Duration(milliseconds: 750), () {
-                            setState(() {
-                              _detected = false;
-                              _valid = false;
-                              _lastBarcode = lastBarcode;
-                              _showThatWeSawDuplicate = true;
-                            });
+                            if (kDebugMode) {
+                              print('clearing detected barcode');
+                            }
+
+                            ref.read(detectedBarcodeProvider.notifier).state =
+                                '';
                           });
                         }
                       },
@@ -300,6 +258,9 @@ class BarcodeData {
 
 final barcodeProvider =
     StateProvider<BarcodeData>((ref) => BarcodeData(0, '', 0));
+
+final detectedBarcodeProvider = StateProvider<String>((ref) => '');
+final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 
 class _AdjustScanCountWidget extends ConsumerWidget {
   const _AdjustScanCountWidget();
@@ -471,28 +432,34 @@ class ShapePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class OverlayForeground extends StatelessWidget {
-  final Path path;
-  final bool? detected;
-  final bool? valid;
-
-  const OverlayForeground(this.path, {this.detected, this.valid, super.key});
+class BarcodeDetectionIcon extends ConsumerWidget {
+  const BarcodeDetectionIcon({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final rect = path.getBounds();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final seeBarcode = ref.watch(detectedBarcodeProvider) != '';
 
-    final detectionColor = true == detected
-        ? true == valid
-            ? Colors.green.withOpacity(1)
-            : Colors.green.withOpacity(0.3)
+    final detectionColor = seeBarcode
+        ? Colors.green.withOpacity(1)
         : Colors.white.withOpacity(0.3);
 
-    final detectionIcon = Icon(
+    return Icon(
       Icons.remove_red_eye_outlined,
       size: 32,
       color: detectionColor,
     );
+  }
+}
+
+class OverlayForeground extends ConsumerWidget {
+  final Path path;
+
+  const OverlayForeground(this.path, {super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rect = path.getBounds();
+
     return Stack(
       children: [
         PathPainter(
@@ -505,8 +472,8 @@ class OverlayForeground extends StatelessWidget {
         ),
         Positioned(
           left: rect.left,
-          top: rect.top - (detectionIcon.size ?? 0).toInt(),
-          child: detectionIcon,
+          top: rect.top - 32,
+          child: const BarcodeDetectionIcon(),
         ),
       ],
     );
