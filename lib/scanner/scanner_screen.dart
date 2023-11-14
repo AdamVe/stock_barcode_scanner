@@ -112,17 +112,10 @@ class ScannerScreen extends ConsumerWidget {
         ref.read(barcodeProvider.notifier).state = _BarcodeData(rowId, next, 1);
       } else {
         if (previous?.isEmpty ?? true) {
-          // TODO: _duplicateVibrate();
           if (kDebugMode) {
             print('Notifying duplicate scan');
           }
           ref.read(duplicateProvider.notifier).state = true;
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (kDebugMode) {
-              print('Clearing duplicate scan notification');
-            }
-            ref.read(duplicateProvider.notifier).state = false;
-          });
         }
         if (kDebugMode) {
           print('See old barcode: $next');
@@ -156,7 +149,7 @@ class ScannerScreen extends ConsumerWidget {
                         foreground: _OverlayForeground(
                           fgPath,
                         ),
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withOpacity(0.8),
                       ),
                       scanWindow: scanRect,
                       onDetect: (capture) async {
@@ -203,7 +196,7 @@ class ScannerScreen extends ConsumerWidget {
   Rect _getScanRect(double width, double height) {
     final center = Offset(width / 2, 160);
     const scanWinHeight = 130.0;
-    final scanWinWidth = width - 40;
+    final scanWinWidth = width - 80;
     return Rect.fromCenter(
         center: center, width: scanWinWidth, height: scanWinHeight);
   }
@@ -278,7 +271,6 @@ class _AdjustScanCountWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final barcode = ref.watch(barcodeProvider);
-    final isDuplicate = ref.watch(duplicateProvider);
     return PositionedDirectional(
         start: 0,
         end: 0,
@@ -287,10 +279,7 @@ class _AdjustScanCountWidget extends ConsumerWidget {
           children: [
             Text(
               barcode.value,
-              style: isDuplicate
-                  ? Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.green, fontWeight: FontWeight.bold)
-                  : Theme.of(context).textTheme.headlineMedium,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
             if (barcode.value.isNotEmpty)
               Row(
@@ -526,7 +515,7 @@ class _OverlayBackground extends StatelessWidget {
   }
 }
 
-class _MobileScannerOverlay extends StatelessWidget {
+class _MobileScannerOverlay extends ConsumerStatefulWidget {
   final Widget background;
   final Widget? foreground;
   final Color color;
@@ -538,22 +527,89 @@ class _MobileScannerOverlay extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_MobileScannerOverlay> createState() =>
+      _MobileScannerOverlayState();
+}
+
+class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
+    with SingleTickerProviderStateMixin {
+  late Animation<Color?> _colorAnimation;
+  late AnimationController _controller;
+
+  bool _showDuplicate = false;
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(duplicateProvider, (previous, next) {
+      if (next == true) {
+        TickerFuture tickerFuture = _controller.repeat();
+        tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
+          _controller.forward(from: 0);
+          _controller.stop(canceled: true);
+          setState(() {
+            _showDuplicate = false;
+            if (kDebugMode) {
+              print('Clearing duplicate scan notification');
+            }
+            ref.read(duplicateProvider.notifier).state = false;
+          });
+        });
+
+        setState(() {
+          _showDuplicate = true;
+        });
+
+        int count = 4;
+        Timer.periodic(const Duration(milliseconds: 100), (timer) {
+          HapticFeedback.lightImpact();
+          count--;
+          if (count == 0) {
+            timer.cancel();
+          }
+        });
+      }
+    });
+
     return Stack(fit: StackFit.expand, children: [
       ColorFiltered(
-        colorFilter: ColorFilter.mode(color, BlendMode.srcOut),
+        colorFilter: ColorFilter.mode(
+            _showDuplicate ? _colorAnimation.value! : widget.color, BlendMode.srcOut),
         child: Stack(
           fit: StackFit.expand,
           children: [
             Container(
               decoration: BoxDecoration(
-                  color: color, backgroundBlendMode: BlendMode.dstOut),
+                  color: widget.color, backgroundBlendMode: BlendMode.dstOut),
             ),
-            background
+            widget.background
           ],
         ),
       ),
-      if (foreground != null) foreground!
+      if (widget.foreground != null) widget.foreground!
     ]);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+        duration: const Duration(milliseconds: 100), vsync: this);
+
+    _colorAnimation =
+        ColorTween(begin: Colors.white.withOpacity(0.3), end: widget.color)
+            .animate(_controller)
+          ..addListener(() {
+            setState(() {
+              // redraws the widget
+            });
+          });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+    _timer?.cancel();
   }
 }
