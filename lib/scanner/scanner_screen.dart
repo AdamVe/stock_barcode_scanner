@@ -14,10 +14,24 @@ import '../domain/models.dart';
 part 'scanner_screen.g.dart';
 
 const _strokeWidth = 3.0;
+const _scannedItemListHeight = 250.0;
+
+Timer? _timer;
+
+class _BarcodeData {
+  final int rowId;
+  final String value;
+  final int count;
+
+  _BarcodeData(this.rowId, this.value, this.count);
+}
 
 final sectionProvider =
     StateProvider<Section>((ref) => Section(0, 0, '', '', DateTime(0)));
-
+final barcodeProvider =
+    StateProvider<_BarcodeData>((ref) => _BarcodeData(0, '', 0));
+final detectedBarcodeProvider = StateProvider<String>((ref) => '');
+final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 final duplicateProvider = StateProvider((ref) => false);
 
 @riverpod
@@ -58,12 +72,133 @@ class _Controller extends _$Controller {
   }
 }
 
-Timer? _timer;
-
 class ScannerScreen extends ConsumerWidget {
   static const routeName = '/scanner';
 
   const ScannerScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    var controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      detectionTimeoutMs: 350,
+    );
+
+    ref.listen(detectedBarcodeProvider, (previous, next) async {
+      if (next.isEmpty) {
+        if (kDebugMode) {
+          print('No barcode detected');
+        }
+        return;
+      }
+
+      if (next != ref.read(lastSeenBarcodeProvider)) {
+        if (kDebugMode) {
+          print('Found new barcode: $next');
+        }
+
+        // add this barcode
+        HapticFeedback.mediumImpact();
+        int rowId = await ref
+            .read(_controllerProvider.notifier)
+            .addScannedItem(ScannedItem(
+              0,
+              ref.read(sectionProvider).id,
+              next,
+              DateTime.now(),
+              1,
+            ));
+
+        ref.read(barcodeProvider.notifier).state = _BarcodeData(rowId, next, 1);
+      } else {
+        if (previous?.isEmpty ?? true) {
+          // TODO: _duplicateVibrate();
+          if (kDebugMode) {
+            print('Notifying duplicate scan');
+          }
+          ref.read(duplicateProvider.notifier).state = true;
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (kDebugMode) {
+              print('Clearing duplicate scan notification');
+            }
+            ref.read(duplicateProvider.notifier).state = false;
+          });
+        }
+        if (kDebugMode) {
+          print('See old barcode: $next');
+        }
+      }
+    });
+
+    return Theme(
+      data: ThemeData.dark(useMaterial3: true),
+      child: Scaffold(
+        appBar:
+            AppBar(title: Text('Section: ${ref.read(sectionProvider).name}')),
+        body: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: LayoutBuilder(builder:
+                    (BuildContext context, BoxConstraints constraints) {
+                  final scanRect =
+                      _getScanRect(constraints.maxWidth, constraints.maxHeight);
+                  final path = _getOverlayCutOutPath(scanRect);
+                  final fgPath = _getOverlayCutOutForegroundPath(scanRect);
+
+                  return Stack(children: [
+                    MobileScanner(
+                      controller: controller,
+                      overlay: _MobileScannerOverlay(
+                        background: _OverlayBackground(path),
+                        foreground: _OverlayForeground(
+                          fgPath,
+                        ),
+                        color: Colors.black.withOpacity(0.6),
+                      ),
+                      scanWindow: scanRect,
+                      onDetect: (capture) async {
+                        final currentBarcode = capture.barcodes
+                                .where((element) =>
+                                    element.format == BarcodeFormat.ean13)
+                                .firstOrNull
+                                ?.rawValue! ??
+                            '';
+
+                        if (currentBarcode.isNotEmpty) {
+                          _timer?.cancel();
+
+                          ref.read(detectedBarcodeProvider.notifier).state =
+                              currentBarcode;
+
+                          ref.read(lastSeenBarcodeProvider.notifier).state =
+                              currentBarcode;
+
+                          // start timer to clear the code if not detected
+                          _timer = Timer(const Duration(milliseconds: 750), () {
+                            if (kDebugMode) {
+                              print('clearing detected barcode');
+                            }
+
+                            ref.read(detectedBarcodeProvider.notifier).state =
+                                '';
+                          });
+                        }
+                      },
+                    ),
+                    const _AdjustScanCountWidget(),
+                  ]);
+                }),
+              ),
+              const _ScannedItemList(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Rect _getScanRect(double width, double height) {
     final center = Offset(width / 2, 160);
@@ -118,144 +253,7 @@ class ScannerScreen extends ConsumerWidget {
         Offset(x2 + 5, y1 - strokeWidth_2)
       ], false);
   }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    var controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      detectionTimeoutMs: 350,
-    );
-
-    ref.listen(detectedBarcodeProvider, (previous, next) async {
-      if (next.isEmpty) {
-        if (kDebugMode) {
-          print('No barcode detected');
-        }
-        return;
-      }
-
-      if (next != ref.read(lastSeenBarcodeProvider)) {
-        if (kDebugMode) {
-          print('Found new barcode: $next');
-        }
-
-        // add this barcode
-        HapticFeedback.mediumImpact();
-        int rowId = await ref
-            .read(_controllerProvider.notifier)
-            .addScannedItem(ScannedItem(
-              0,
-              ref.read(sectionProvider).id,
-              next,
-              DateTime.now(),
-              1,
-            ));
-
-        ref.read(barcodeProvider.notifier).state = BarcodeData(rowId, next, 1);
-      } else {
-        if (previous?.isEmpty ?? true) {
-          // TODO: _duplicateVibrate();
-          if (kDebugMode) {
-            print('Notifying duplicate scan');
-          }
-          ref.read(duplicateProvider.notifier).state = true;
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (kDebugMode) {
-              print('Clearing duplicate scan notification');
-            }
-            ref.read(duplicateProvider.notifier).state = false;
-          });
-        }
-        if (kDebugMode) {
-          print('See old barcode: $next');
-        }
-      }
-    });
-
-    return Theme(
-      data: ThemeData.dark(useMaterial3: true),
-      child: Scaffold(
-        appBar:
-            AppBar(title: Text('Section: ${ref.read(sectionProvider).name}')),
-        body: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: LayoutBuilder(builder:
-                    (BuildContext context, BoxConstraints constraints) {
-                  final scanRect =
-                      _getScanRect(constraints.maxWidth, constraints.maxHeight);
-                  final path = _getOverlayCutOutPath(scanRect);
-                  final fgPath = _getOverlayCutOutForegroundPath(scanRect);
-
-                  return Stack(children: [
-                    MobileScanner(
-                      controller: controller,
-                      overlay: MobileScannerOverlay(
-                        background: OverlayBackground(path),
-                        foreground: OverlayForeground(
-                          fgPath,
-                        ),
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                      scanWindow: scanRect,
-                      onDetect: (capture) async {
-                        final currentBarcode = capture.barcodes
-                                .where((element) =>
-                                    element.format == BarcodeFormat.ean13)
-                                .firstOrNull
-                                ?.rawValue! ??
-                            '';
-
-                        if (currentBarcode.isNotEmpty) {
-                          _timer?.cancel();
-
-                          ref.read(detectedBarcodeProvider.notifier).state =
-                              currentBarcode;
-
-                          ref.read(lastSeenBarcodeProvider.notifier).state =
-                              currentBarcode;
-
-                          // start timer to clear the code if not detected
-                          _timer = Timer(const Duration(milliseconds: 750), () {
-                            if (kDebugMode) {
-                              print('clearing detected barcode');
-                            }
-
-                            ref.read(detectedBarcodeProvider.notifier).state =
-                                '';
-                          });
-                        }
-                      },
-                    ),
-                    const _AdjustScanCountWidget(),
-                  ]);
-                }),
-              ),
-              const _ScannedItemList(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
-
-class BarcodeData {
-  int rowId;
-  String value;
-  int count;
-
-  BarcodeData(this.rowId, this.value, this.count);
-}
-
-final barcodeProvider =
-    StateProvider<BarcodeData>((ref) => BarcodeData(0, '', 0));
-
-final detectedBarcodeProvider = StateProvider<String>((ref) => '');
-final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 
 class _AdjustScanCountWidget extends ConsumerWidget {
   const _AdjustScanCountWidget();
@@ -274,7 +272,7 @@ class _AdjustScanCountWidget extends ConsumerWidget {
         ));
 
     ref.read(barcodeProvider.notifier).state =
-        BarcodeData(barcode.rowId, barcode.value, count);
+        _BarcodeData(barcode.rowId, barcode.value, count);
   }
 
   @override
@@ -326,8 +324,6 @@ class _AdjustScanCountWidget extends ConsumerWidget {
         ));
   }
 }
-
-const _scannedItemListHeight = 250.0;
 
 class _ScannedItemListError extends StatelessWidget {
   const _ScannedItemListError();
@@ -439,25 +435,25 @@ class _ScannedItemList extends ConsumerWidget {
   }
 }
 
-class PathPainter extends StatelessWidget {
+class _PathPainter extends StatelessWidget {
   final Path path;
   final Paint pathPaint;
 
-  const PathPainter({required this.path, required this.pathPaint, super.key});
+  const _PathPainter({required this.path, required this.pathPaint, super.key});
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: ShapePainter(path: path, pathPaint: pathPaint),
+      painter: _ShapePainter(path: path, pathPaint: pathPaint),
     );
   }
 }
 
-class ShapePainter extends CustomPainter {
+class _ShapePainter extends CustomPainter {
   final Path path;
   final Paint pathPaint;
 
-  const ShapePainter({required this.path, required this.pathPaint}) : super();
+  const _ShapePainter({required this.path, required this.pathPaint}) : super();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -468,8 +464,8 @@ class ShapePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class BarcodeDetectionIcon extends ConsumerWidget {
-  const BarcodeDetectionIcon({super.key});
+class _BarcodeDetectionIcon extends ConsumerWidget {
+  const _BarcodeDetectionIcon({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -487,10 +483,10 @@ class BarcodeDetectionIcon extends ConsumerWidget {
   }
 }
 
-class OverlayForeground extends ConsumerWidget {
+class _OverlayForeground extends ConsumerWidget {
   final Path path;
 
-  const OverlayForeground(this.path, {super.key});
+  const _OverlayForeground(this.path, {super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -498,7 +494,7 @@ class OverlayForeground extends ConsumerWidget {
 
     return Stack(
       children: [
-        PathPainter(
+        _PathPainter(
           path: path,
           pathPaint: Paint()
             ..style = PaintingStyle.stroke
@@ -509,33 +505,33 @@ class OverlayForeground extends ConsumerWidget {
         Positioned(
           left: rect.left,
           top: rect.top - 32,
-          child: const BarcodeDetectionIcon(),
+          child: const _BarcodeDetectionIcon(),
         ),
       ],
     );
   }
 }
 
-class OverlayBackground extends StatelessWidget {
+class _OverlayBackground extends StatelessWidget {
   final Path path;
 
-  const OverlayBackground(this.path, {super.key});
+  const _OverlayBackground(this.path, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    return PathPainter(
+    return _PathPainter(
       path: path,
       pathPaint: Paint()..color = Colors.black,
     );
   }
 }
 
-class MobileScannerOverlay extends StatelessWidget {
+class _MobileScannerOverlay extends StatelessWidget {
   final Widget background;
   final Widget? foreground;
   final Color color;
 
-  const MobileScannerOverlay({
+  const _MobileScannerOverlay({
     required this.background,
     this.foreground,
     required this.color,
