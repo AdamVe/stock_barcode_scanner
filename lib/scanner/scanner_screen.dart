@@ -121,7 +121,6 @@ class ScannerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(_controllerProvider);
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 350,
@@ -235,11 +234,7 @@ class ScannerScreen extends ConsumerWidget {
                   ]);
                 }),
               ),
-              state.when(
-                error: (e, st) => Center(child: Text('Error: $st')),
-                loading: () => const CircularProgressIndicator(),
-                data: (scannedItems) => _ScannedItemList(scannedItems),
-              ),
+              const _ScannedItemList(),
             ],
           ),
         ),
@@ -332,73 +327,114 @@ class _AdjustScanCountWidget extends ConsumerWidget {
   }
 }
 
-class _ScannedItemList extends ConsumerWidget {
-  final List<ScannedItem> _scannedItems;
+const _scannedItemListHeight = 250.0;
 
-  const _ScannedItemList(this._scannedItems);
+class _ScannedItemListError extends StatelessWidget {
+  const _ScannedItemListError();
+
+  @override
+  Widget build(BuildContext context) => const Column(children: [
+        ListTile(
+          leading: Icon(Icons.document_scanner_outlined),
+          title: Text('Items'),
+          subtitle: Text('Error loading data'),
+        ),
+        SizedBox(
+          height: _scannedItemListHeight,
+        )
+      ]);
+}
+
+class _ScannedItemListLoading extends StatelessWidget {
+  const _ScannedItemListLoading();
+
+  @override
+  Widget build(BuildContext context) => const Column(children: [
+        ListTile(
+          leading: Icon(Icons.document_scanner_outlined),
+          title: Text('Items'),
+          subtitle: Text('Loading'),
+        ),
+        SizedBox(
+          height: _scannedItemListHeight,
+        )
+      ]);
+}
+
+class _ScannedItemList extends ConsumerWidget {
+  const _ScannedItemList();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Builder(builder: (context) {
-      return Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.document_scanner_outlined),
-            title: const Text('Items'),
-            subtitle: Text('Count: ${_scannedItems.length}'),
-          ),
-          SizedBox(
-            height: 250,
-            child: ListView.builder(
-                itemCount: _scannedItems.length,
-                itemBuilder: (BuildContext context, int index) {
-                  final scannedItem = _scannedItems[index];
-                  final sum = _scannedItems
-                      .where((i) => i.barcode == scannedItem.barcode)
-                      .fold(0, (previousValue, i) => previousValue + i.count);
-                  return ListTile(
-                    title: Row(
-                      children: [
-                        SizedBox(
-                          width: 32,
-                          child: scannedItem.count > 1
-                              ? Text('${scannedItem.count} \u00d7')
-                              : const Text(''),
-                        ),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        Text(
-                          scannedItem.barcode,
-                          style: Theme.of(context).textTheme.displaySmall,
-                        ),
-                        const Spacer(),
-                        IconButton(
-                            onPressed: () {
-                              ref
-                                  .read(_controllerProvider.notifier)
-                                  .deleteScannedItem(scannedItem);
-                            },
-                            icon: const Icon(Icons.delete_outline_outlined))
-                      ],
-                    ),
-                    subtitle: Row(
-                      children: [
-                        const SizedBox(
-                          width: 40, // 32 + 8
-                        ),
-                        Text(scannedItem.created.format()),
-                        const SizedBox(
-                          width: 32,
-                        ),
-                        Text('Sum: $sum')
-                      ],
-                    ),
-                  );
-                }),
-          ),
-        ],
-      );
+      final state = ref.watch(_controllerProvider);
+      return state.when(
+          error: (e, st) => const _ScannedItemListError(),
+          loading: () => const _ScannedItemListLoading(),
+          data: (scannedItems) => Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.document_scanner_outlined),
+                    title: const Text('Items'),
+                    subtitle: Text('Count: ${scannedItems.length}'),
+                  ),
+                  SizedBox(
+                    height: _scannedItemListHeight,
+                    child: ListView.builder(
+                        itemCount: scannedItems.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final scannedItem = scannedItems[index];
+                          final sum = scannedItems
+                              .where((i) => i.barcode == scannedItem.barcode)
+                              .fold(
+                                  0,
+                                  (previousValue, i) =>
+                                      previousValue + i.count);
+                          return ListTile(
+                            title: Row(
+                              children: [
+                                SizedBox(
+                                  width: 32,
+                                  child: scannedItem.count > 1
+                                      ? Text('${scannedItem.count} \u00d7')
+                                      : const Text(''),
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ),
+                                Text(
+                                  scannedItem.barcode,
+                                  style:
+                                      Theme.of(context).textTheme.displaySmall,
+                                ),
+                                const Spacer(),
+                                IconButton(
+                                    onPressed: () {
+                                      ref
+                                          .read(_controllerProvider.notifier)
+                                          .deleteScannedItem(scannedItem);
+                                    },
+                                    icon: const Icon(
+                                        Icons.delete_outline_outlined))
+                              ],
+                            ),
+                            subtitle: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 40, // 32 + 8
+                                ),
+                                Text(scannedItem.created.format()),
+                                const SizedBox(
+                                  width: 32,
+                                ),
+                                Text('Sum: $sum')
+                              ],
+                            ),
+                          );
+                        }),
+                  ),
+                ],
+              ));
     });
   }
 }
