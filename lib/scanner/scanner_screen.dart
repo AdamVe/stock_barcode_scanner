@@ -1,14 +1,15 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
 
 import '../data/item_repository.dart';
-import '../date_time_ext.dart';
 import '../domain/models.dart';
 
 part 'scanner_screen.g.dart';
@@ -34,11 +35,42 @@ final detectedBarcodeProvider = StateProvider<String>((ref) => '');
 final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 final duplicateProvider = StateProvider((ref) => false);
 
+final scanSoundProvider = Provider((ref) {
+  final player = AudioPlayer()
+    ..setSource(AssetSource('sounds/scan.wav'))
+    ..setReleaseMode(ReleaseMode.stop);
+
+  ref.onDispose(() {
+    if (kDebugMode) {
+      print('scanSoundProvider audio player disposed');
+    }
+    player.dispose();
+  });
+
+  return player;
+});
+
+final duplicateSoundProvider = Provider((ref) {
+  final player = AudioPlayer()
+    ..setSource(AssetSource('sounds/duplicate.wav'))
+    ..setReleaseMode(ReleaseMode.stop);
+
+  ref.onDispose(() {
+    if (kDebugMode) {
+      print('duplicateSoundProvider audio player disposed');
+    }
+    player.dispose();
+  });
+  return player;
+});
+
 @riverpod
 class _Controller extends _$Controller {
   Future<List<ScannedItem>> _read() async {
-    final sectionId = ref.read(sectionProvider).id;
-    return ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
+    final sectionId =
+        ref.watch(sectionProvider.select((section) => section.id));
+    return ref.watch(itemRepositoryProvider
+        .select((repository) => repository.getScans(sectionId: sectionId)));
   }
 
   @override
@@ -79,6 +111,8 @@ class ScannerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scanSound = ref.watch(scanSoundProvider);
+    final section = ref.watch(sectionProvider);
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 350,
@@ -92,24 +126,25 @@ class ScannerScreen extends ConsumerWidget {
         return;
       }
 
-      if (next != ref.read(lastSeenBarcodeProvider)) {
+      if (next != ref.watch(lastSeenBarcodeProvider)) {
         if (kDebugMode) {
           print('Found new barcode: $next');
         }
 
-        // add this barcode
         HapticFeedback.mediumImpact();
-        int rowId = await ref
+        scanSound.resume();
+
+        ref
             .read(_controllerProvider.notifier)
             .addScannedItem(ScannedItem(
               0,
-              ref.read(sectionProvider).id,
+              section.id,
               next,
               DateTime.now(),
               1,
-            ));
-
-        ref.read(barcodeProvider.notifier).state = _BarcodeData(rowId, next, 1);
+            ))
+            .then((rowId) => ref.read(barcodeProvider.notifier).state =
+                _BarcodeData(rowId, next, 1));
       } else {
         if (previous?.isEmpty ?? true) {
           if (kDebugMode) {
@@ -126,8 +161,7 @@ class ScannerScreen extends ConsumerWidget {
     return Theme(
       data: ThemeData.dark(useMaterial3: true),
       child: Scaffold(
-        appBar:
-            AppBar(title: Text('Section: ${ref.read(sectionProvider).name}')),
+        appBar: AppBar(title: Text('Section: ${section.name}')),
         body: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -252,8 +286,9 @@ class _AdjustScanCountWidget extends ConsumerWidget {
   const _AdjustScanCountWidget();
 
   void _update(WidgetRef ref, int amount) {
-    final sectionId = ref.read(sectionProvider).id;
-    final barcode = ref.read(barcodeProvider);
+    final sectionId =
+        ref.watch(sectionProvider.select((section) => section.id));
+    final barcode = ref.watch(barcodeProvider);
     int count = barcode.count + amount;
     HapticFeedback.mediumImpact();
     ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
@@ -360,8 +395,7 @@ class _ScannedItemList extends ConsumerWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.document_scanner_outlined),
-                    title: const Text('Items'),
-                    subtitle: Text('Count: ${scannedItems.length}'),
+                    title: Text('${scannedItems.length} items'),
                   ),
                   SizedBox(
                     height: _scannedItemListHeight,
@@ -369,51 +403,76 @@ class _ScannedItemList extends ConsumerWidget {
                         itemCount: scannedItems.length,
                         itemBuilder: (BuildContext context, int index) {
                           final scannedItem = scannedItems[index];
+                          final count = scannedItem.count;
                           final sum = scannedItems
                               .where((i) => i.barcode == scannedItem.barcode)
                               .fold(
                                   0,
                                   (previousValue, i) =>
                                       previousValue + i.count);
-                          return ListTile(
-                            title: Row(
-                              children: [
-                                SizedBox(
-                                  width: 32,
-                                  child: scannedItem.count > 1
-                                      ? Text('${scannedItem.count} \u00d7')
-                                      : const Text(''),
+                          final textTheme = Theme.of(context).textTheme;
+                          return Card(
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12.0),
+                              onTap: () {},
+                              onLongPress: () async {
+                                await ref
+                                    .read(_controllerProvider.notifier)
+                                    .deleteScannedItem(scannedItem);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    Builder(builder: (context) {
+                                      return FittedBox(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16.0),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.max,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text('$count \u00d7 ',
+                                                  style: textTheme.bodyLarge
+                                                      ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                              Text(scannedItem.barcode,
+                                                  style:
+                                                      textTheme.displayMedium),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text('Scanned: ',
+                                            style: textTheme.bodyLarge
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                        Text(scannedItem.created.format()),
+                                        const SizedBox(
+                                          width: 32,
+                                        ),
+                                        Text('Sum: ',
+                                            style: textTheme.bodyLarge
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                        Text('$sum'),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(
-                                  width: 8,
-                                ),
-                                Text(
-                                  scannedItem.barcode,
-                                  style:
-                                      Theme.of(context).textTheme.displaySmall,
-                                ),
-                                const Spacer(),
-                                IconButton(
-                                    onPressed: () {
-                                      ref
-                                          .read(_controllerProvider.notifier)
-                                          .deleteScannedItem(scannedItem);
-                                    },
-                                    icon: const Icon(
-                                        Icons.delete_outline_outlined))
-                              ],
-                            ),
-                            subtitle: Row(
-                              children: [
-                                const SizedBox(
-                                  width: 40, // 32 + 8
-                                ),
-                                Text(scannedItem.created.format()),
-                                const SizedBox(
-                                  width: 32,
-                                ),
-                                Text('Sum: $sum')
-                              ],
+                              ),
                             ),
                           );
                         }),
@@ -540,7 +599,8 @@ class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(duplicateProvider, (previous, next) {
+    final duplicateSoundPlayer = ref.watch(duplicateSoundProvider);
+    ref.listen(duplicateProvider, (previous, next) async {
       if (next == true) {
         TickerFuture tickerFuture = _controller.repeat();
         tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
@@ -559,6 +619,7 @@ class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
           _showDuplicate = true;
         });
 
+        duplicateSoundPlayer.resume();
         int count = 4;
         Timer.periodic(const Duration(milliseconds: 100), (timer) {
           HapticFeedback.lightImpact();
@@ -573,7 +634,8 @@ class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
     return Stack(fit: StackFit.expand, children: [
       ColorFiltered(
         colorFilter: ColorFilter.mode(
-            _showDuplicate ? _colorAnimation.value! : widget.color, BlendMode.srcOut),
+            _showDuplicate ? _colorAnimation.value! : widget.color,
+            BlendMode.srcOut),
         child: Stack(
           fit: StackFit.expand,
           children: [
