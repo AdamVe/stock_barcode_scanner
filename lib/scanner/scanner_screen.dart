@@ -439,7 +439,7 @@ class _PathPainter extends StatelessWidget {
   final Path path;
   final Paint pathPaint;
 
-  const _PathPainter({required this.path, required this.pathPaint, super.key});
+  const _PathPainter({required this.path, required this.pathPaint});
 
   @override
   Widget build(BuildContext context) {
@@ -465,7 +465,7 @@ class _ShapePainter extends CustomPainter {
 }
 
 class _BarcodeDetectionIcon extends ConsumerWidget {
-  const _BarcodeDetectionIcon({super.key});
+  const _BarcodeDetectionIcon();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -486,7 +486,7 @@ class _BarcodeDetectionIcon extends ConsumerWidget {
 class _OverlayForeground extends ConsumerWidget {
   final Path path;
 
-  const _OverlayForeground(this.path, {super.key});
+  const _OverlayForeground(this.path);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -515,7 +515,7 @@ class _OverlayForeground extends ConsumerWidget {
 class _OverlayBackground extends StatelessWidget {
   final Path path;
 
-  const _OverlayBackground(this.path, {super.key});
+  const _OverlayBackground(this.path);
 
   @override
   Widget build(BuildContext context) {
@@ -535,7 +535,6 @@ class _MobileScannerOverlay extends StatelessWidget {
     required this.background,
     this.foreground,
     required this.color,
-    super.key,
   });
 
   @override
