@@ -128,7 +128,7 @@ class ProjectsScreen extends ConsumerWidget {
                 return const ProjectDialog();
               });
           if (newProject != null) {
-            ref.read(_controllerProvider.notifier).updateProject(newProject);
+            ref.read(_controllerProvider.notifier).addProject(newProject);
           }
         },
         child: const Icon(Icons.add),
