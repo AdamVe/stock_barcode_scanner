@@ -163,91 +163,98 @@ class SectionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 10,
       color: Theme.of(context).colorScheme.secondaryContainer,
-      child: Stack(
-        fit: StackFit.loose,
-        alignment: AlignmentDirectional.topEnd,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  exportSection.section.name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .displayLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Description: ${exportSection.section.note}',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        'Scanned items: ${exportSection.items.length}',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        exportSection.items.isEmpty
-                            ? ''
-                            : 'Latest update: ${exportSection.items[0].created.format()}',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                    ],
+                Expanded(
+                  child: FittedBox(
+                    alignment: Alignment.topLeft,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      exportSection.section.name,
+                      style: Theme.of(context)
+                          .textTheme
+                          .displayLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                ButtonBar(
                   children: [
-                    ElevatedButton.icon(
-                        onPressed: () async => onScan?.call(),
-                        icon: const Icon(Icons.document_scanner_outlined),
-                        label: const Text('Scan')),
+                    IconButton(
+                        onPressed: () async => onExport?.call(),
+                        icon: const Icon(Icons.ios_share)),
+                    PopupMenuButton<_SectionAction>(
+                      itemBuilder: (BuildContext context) => [
+                        const PopupMenuItem<_SectionAction>(
+                            value: _SectionAction.actionEditSection,
+                            child: Text('Edit')),
+                        const PopupMenuItem<_SectionAction>(
+                            value: _SectionAction.actionDeleteSection,
+                            child: Text('Delete'))
+                      ],
+                      onSelected: (_SectionAction sectionAction) async {
+                        switch (sectionAction) {
+                          case _SectionAction.actionEditSection:
+                            onEdit?.call();
+                          case _SectionAction.actionDeleteSection:
+                            onDelete?.call();
+                          default:
+                        }
+                      },
+                    )
                   ],
-                )
+                ),
               ],
             ),
-          ),
-          ButtonBar(
-            children: [
-              IconButton(
-                  onPressed: () async => onExport?.call(),
-                  icon: const Icon(Icons.ios_share)),
-              PopupMenuButton<_SectionAction>(
-                itemBuilder: (BuildContext context) => [
-                  const PopupMenuItem<_SectionAction>(
-                      value: _SectionAction.actionEditSection,
-                      child: Text('Edit')),
-                  const PopupMenuItem<_SectionAction>(
-                      value: _SectionAction.actionDeleteSection,
-                      child: Text('Delete'))
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Description: ${exportSection.section.note}',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    'Scanned items: ${exportSection.items.length}',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    exportSection.items.isEmpty
+                        ? ''
+                        : 'Latest update: ${exportSection.items[0].created.format()}',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                 ],
-                onSelected: (_SectionAction sectionAction) async {
-                  switch (sectionAction) {
-                    case _SectionAction.actionEditSection:
-                      onEdit?.call();
-                    case _SectionAction.actionDeleteSection:
-                      onDelete?.call();
-                    default:
-                  }
-                },
-              )
-            ],
-          ),
-        ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                    onPressed: () async => onScan?.call(),
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: const Text('Scan')),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
