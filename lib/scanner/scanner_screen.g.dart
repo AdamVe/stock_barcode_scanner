@@ -6,7 +6,7 @@ part of 'scanner_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$controllerHash() => r'61575e03b7bc840ac7e0f9be9c78bf7cbaeae6cb';
+String _$controllerHash() => r'67d495ece4eacbffb060d6182ac3ebceffb5842e';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)
