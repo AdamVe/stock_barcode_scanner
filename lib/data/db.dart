@@ -16,7 +16,7 @@ class DbConnector {
           mode: OpenMode.readWriteCreate, uri: false, mutex: true);
       _db.execute('''
       CREATE TABLE IF NOT EXISTS $kTableProject (
-        id INTEGER NOT NULL PRIMARY KEY,
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         details TEXT NOT NULL,
         created_date DATE NOT NULL,
@@ -24,7 +24,7 @@ class DbConnector {
       );
       
       CREATE TABLE IF NOT EXISTS $kTableSection (
-        id INTEGER NOT NULL PRIMARY KEY,
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         project_id INTEGER NOT NULL,
         name TEXT NOT NULL,
         details TEXT NOT NULL,
@@ -33,7 +33,7 @@ class DbConnector {
       );
 
       CREATE TABLE IF NOT EXISTS $kTableScannedItem (
-        id INTEGER NOT NULL PRIMARY KEY,
+        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         section_id INTEGER NOT NULL,
         barcode TEXT NOT NULL,
         created_date DATE NOT NULL,
