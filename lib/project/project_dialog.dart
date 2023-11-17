@@ -13,7 +13,7 @@ class ProjectDialog extends StatefulWidget {
 
 class _ProjectDialogState extends State<ProjectDialog> {
   final projectNameController = TextEditingController();
-  final ownerController = TextEditingController();
+  final projectDetailsController = TextEditingController();
   bool enabled = false;
 
   @override
@@ -21,7 +21,7 @@ class _ProjectDialogState extends State<ProjectDialog> {
     super.initState();
 
     if (widget.project != null) {
-      ownerController.text = widget.project!.owner;
+      projectDetailsController.text = widget.project!.details;
       projectNameController.text = widget.project!.name;
     }
   }
@@ -29,15 +29,14 @@ class _ProjectDialogState extends State<ProjectDialog> {
   @override
   void dispose() {
     projectNameController.dispose();
-    ownerController.dispose();
+    projectDetailsController.dispose();
     super.dispose();
   }
 
   bool _isEnabled() => widget.project != null
       ? projectNameController.text != widget.project!.name ||
-          ownerController.text != widget.project!.owner
-      : projectNameController.text.isNotEmpty &&
-          ownerController.text.isNotEmpty;
+          projectDetailsController.text != widget.project!.details
+      : projectNameController.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +54,15 @@ class _ProjectDialogState extends State<ProjectDialog> {
             onPressed: !enabled
                 ? null
                 : () {
+                    final accessedDate = DateTime.now();
+                    final createdDate = widget.project?.created ?? accessedDate;
+
                     Navigator.of(context).pop(Project(
                       widget.project?.id ?? 0,
                       projectNameController.text,
-                      DateTime.now(),
-                      ownerController.text,
-                      0,
+                      projectDetailsController.text,
+                      createdDate, // created
+                      accessedDate, // accessed
                     ));
                   },
             child: widget.project != null
@@ -88,10 +90,10 @@ class _ProjectDialogState extends State<ProjectDialog> {
                   enabled = _isEnabled();
                 });
               },
-              controller: ownerController,
+              controller: projectDetailsController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Owner',
+                labelText: 'Details',
               )),
         ],
       ),

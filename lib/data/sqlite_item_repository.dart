@@ -64,4 +64,15 @@ class SqliteItemRepository extends ItemRepository {
   Future<void> updateSection({required Section section}) async {
     DbConnector.updateSection(section);
   }
+
+  @override
+  Future<int> getActiveProject() async {
+    return DbConnector.getActiveProject();
+  }
+
+  @override
+  Future<void> setActiveProject({required int projectId}) async {
+    DbConnector.setActiveProject(projectId);
+  }
+
 }

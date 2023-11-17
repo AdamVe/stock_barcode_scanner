@@ -30,4 +30,9 @@ abstract class ItemRepository {
   Future<void> updateScan({required ScannedItem scan});
 
   Future<void> deleteScan({required ScannedItem scan});
+
+  // settings
+  Future<int> getActiveProject();
+
+  Future<void> setActiveProject({required int projectId});
 }

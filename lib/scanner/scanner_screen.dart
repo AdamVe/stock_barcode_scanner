@@ -22,15 +22,16 @@ Timer? _timer;
 class _BarcodeData {
   final int rowId;
   final String value;
+  final DateTime created;
   final int count;
 
-  _BarcodeData(this.rowId, this.value, this.count);
+  _BarcodeData(this.rowId, this.value, this.created, this.count);
 }
 
 final sectionProvider =
-    StateProvider<Section>((ref) => Section(0, 0, '', '', DateTime(0)));
+    StateProvider<Section>((ref) => Section(0, 0, '', '', '', DateTime(0)));
 final barcodeProvider =
-    StateProvider<_BarcodeData>((ref) => _BarcodeData(0, '', 0));
+    StateProvider<_BarcodeData>((ref) => _BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0));
 final detectedBarcodeProvider = StateProvider<String>((ref) => '');
 final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 final duplicateProvider = StateProvider((ref) => false);
@@ -134,17 +135,20 @@ class ScannerScreen extends ConsumerWidget {
         HapticFeedback.mediumImpact();
         scanSound.resume();
 
+        final createdUpdatedDate = DateTime.now();
+
         ref
             .read(_controllerProvider.notifier)
             .addScannedItem(ScannedItem(
               0,
               section.id,
               next,
-              DateTime.now(),
+              createdUpdatedDate,
+              createdUpdatedDate,
               1,
             ))
             .then((rowId) => ref.read(barcodeProvider.notifier).state =
-                _BarcodeData(rowId, next, 1));
+                _BarcodeData(rowId, next, createdUpdatedDate, 1));
       } else {
         if (previous?.isEmpty ?? true) {
           if (kDebugMode) {
@@ -295,12 +299,13 @@ class _AdjustScanCountWidget extends ConsumerWidget {
           barcode.rowId,
           sectionId,
           barcode.value,
+          barcode.created,
           DateTime.now(),
           count,
         ));
 
     ref.read(barcodeProvider.notifier).state =
-        _BarcodeData(barcode.rowId, barcode.value, count);
+        _BarcodeData(barcode.rowId, barcode.value, barcode.created, count);
   }
 
   @override

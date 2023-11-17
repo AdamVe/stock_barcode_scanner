@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stock_barcode_scanner/project/projects_screen.dart';
+import 'package:stock_barcode_scanner/section/first_scan_dialog.dart';
 
 import '../data/item_repository.dart';
 import '../date_time_ext.dart';
@@ -13,15 +15,23 @@ part 'sections_screen.g.dart';
 
 enum _SectionAction { actionEditSection, actionDeleteSection }
 
-final projectIdProvider = StateProvider<int>((ref) => 0);
+final projectIdProvider = StateProvider<int>((ref) => -1);
 
 @riverpod
 class _Controller extends _$Controller {
-  Future<List<ExportSection>> _read() async {
-    final projectId = ref.watch(projectIdProvider);
-    final sections = (await ref
-            .read(itemRepositoryProvider)
-            .getSections(projectId: projectId))
+  Future<List<ExportSection>?> _read() async {
+    final repository = ref.read(itemRepositoryProvider);
+    final projectId = await repository.getActiveProject();
+    ref.read(projectIdProvider.notifier).state = projectId;
+    // does project exist?
+    final projects = await repository.getProjects();
+    final projectExists =
+        projects.where((project) => project.id == projectId).isNotEmpty;
+
+    if (!projectExists) {
+      return null;
+    }
+    final sections = (await repository.getSections(projectId: projectId))
         .map((e) => ExportSection(e))
         .toList(growable: false);
     sections.sort((s1, s2) {
@@ -35,7 +45,8 @@ class _Controller extends _$Controller {
   }
 
   @override
-  FutureOr<List<ExportSection>> build() {
+  FutureOr<List<ExportSection>?> build() {
+    ref.invalidate(itemRepositoryProvider);
     return _read();
   }
 
@@ -69,31 +80,53 @@ class SectionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(_controllerProvider);
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Sections'),
-      ),
-      body: SafeArea(
-        child: state.when(
-            error: (e, st) => Text('ERROR: $st'),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.folder_copy_outlined),
+              tooltip: 'Manage projects',
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    ProjectsScreen.routeName, (route) => false);
+              },
+            ),
+          ],
+          title: const Text('Sections'),
+        ),
+        body: SafeArea(
+          child: state.when(
+            error: (e, st) {
+              return Center(child: Text('ERROR: $e'));
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
-            data: (sections) => _SectionList(sections)),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          Section? section = await showAdaptiveDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return SectionDialog(projectId: ref.read(projectIdProvider));
-              });
-          if (section != null) {
-            ref.read(_controllerProvider.notifier).addSection(section);
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('New section'),
-      ),
-    );
+            data: (sections) => sections != null
+                ? _SectionList(sections)
+                : FirstScanDialog(after: () {
+                    ref.read(_controllerProvider.notifier).loadSections();
+                  }),
+          ),
+        ),
+        floatingActionButton: state.whenOrNull(
+            data: (sections) => sections == null
+                ? null
+                : FloatingActionButton.extended(
+                    onPressed: () async {
+                      Section? section = await showAdaptiveDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return SectionDialog(
+                                projectId: ref.read(projectIdProvider));
+                          });
+                      if (section != null) {
+                        ref
+                            .read(_controllerProvider.notifier)
+                            .addSection(section);
+                      }
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('New section'),
+                  )));
   }
 }
 
@@ -222,7 +255,14 @@ class SectionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Description: ${exportSection.section.note}',
+                    'Description: ${exportSection.section.details}',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    'Operator: ${exportSection.section.operatorName}',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(

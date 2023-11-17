@@ -14,7 +14,8 @@ class SectionDialog extends StatefulWidget {
 
 class _SectionDialogState extends State<SectionDialog> {
   final sectionNameController = TextEditingController();
-  final noteController = TextEditingController();
+  final detailsController = TextEditingController();
+  final operatorNameController = TextEditingController();
   bool enabled = false;
 
   @override
@@ -22,22 +23,26 @@ class _SectionDialogState extends State<SectionDialog> {
     super.initState();
 
     if (widget.section != null) {
-      noteController.text = widget.section!.note;
+      detailsController.text = widget.section!.details;
       sectionNameController.text = widget.section!.name;
+      operatorNameController.text = widget.section!.operatorName;
     }
   }
 
   @override
   void dispose() {
     sectionNameController.dispose();
-    noteController.dispose();
+    detailsController.dispose();
+    operatorNameController.dispose();
     super.dispose();
   }
 
   bool _isEnabled() => widget.section != null
       ? sectionNameController.text != widget.section!.name ||
-          noteController.text != widget.section!.note
-      : sectionNameController.text.isNotEmpty && noteController.text.isNotEmpty;
+          operatorNameController.text != widget.section!.operatorName ||
+          detailsController.text != widget.section!.details
+      : sectionNameController.text.isNotEmpty &&
+          operatorNameController.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -55,21 +60,14 @@ class _SectionDialogState extends State<SectionDialog> {
             onPressed: !enabled
                 ? null
                 : () {
-                    final section = widget.section != null
-                        ? Section(
-                            widget.section!.id,
-                            widget.section!.projectId,
-                            sectionNameController.text,
-                            noteController.text,
-                            widget.section!.created,
-                          )
-                        : Section(
-                            0,
-                            widget.projectId!,
-                            sectionNameController.text,
-                            noteController.text,
-                            DateTime.now(),
-                          );
+                    final section = Section(
+                      widget.section?.id ?? 0,
+                      widget.section?.projectId ?? widget.projectId!,
+                      sectionNameController.text,
+                      detailsController.text,
+                      operatorNameController.text,
+                      widget.section?.created ?? DateTime.now(),
+                    );
                     Navigator.of(context).pop(section);
                   },
             child: widget.section != null
@@ -97,10 +95,22 @@ class _SectionDialogState extends State<SectionDialog> {
                   enabled = _isEnabled();
                 });
               },
-              controller: noteController,
+              controller: detailsController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Section note',
+                labelText: 'Section details',
+              )),
+          const SizedBox(height: 16),
+          TextFormField(
+              onChanged: (String value) {
+                setState(() {
+                  enabled = _isEnabled();
+                });
+              },
+              controller: operatorNameController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Operator',
               )),
         ],
       ),

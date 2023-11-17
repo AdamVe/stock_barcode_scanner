@@ -27,6 +27,7 @@ class StockBarcodeScannerApp extends StatelessWidget {
     const seedColor = Color.fromARGB(255, 17, 111, 7);
     return MaterialApp(
       title: 'Stock Barcode Scanner',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
             seedColor: seedColor, brightness: Brightness.light),
@@ -37,13 +38,12 @@ class StockBarcodeScannerApp extends StatelessWidget {
             seedColor: seedColor, brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      initialRoute: ProjectsScreen.routeName,
+      initialRoute: SectionsScreen.routeName,
       routes: {
-        ProjectsScreen.routeName: (context) => const ProjectsScreen(),
         SectionsScreen.routeName: (context) => const SectionsScreen(),
+        ProjectsScreen.routeName: (context) => const ProjectsScreen(),
         ScannerScreen.routeName: (context) => const ScannerScreen()
       },
-      home: const ProjectsScreen(),
     );
   }
 }

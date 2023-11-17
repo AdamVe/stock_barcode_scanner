@@ -29,7 +29,7 @@ Future<void> export(Section section) async {
   final encoded = jsonEncode(exportSection);
 
   final name = '${exportSection.project.name}_${section.name} by '
-      '${exportSection.project.owner}.json';
+      '${exportSection.section.operatorName}.json';
   final tempDir = await getTemporaryDirectory();
   final file = File(join(tempDir.path, name));
   file.writeAsString(encoded);
@@ -37,7 +37,7 @@ Future<void> export(Section section) async {
   final MailOptions mailOptions = MailOptions(
     body: '<b>Project:</b> ${exportSection.project.name}<br>'
         '<b>Section:</b> ${exportSection.section.name}<p>'
-        'Scanned by ${exportSection.project.owner}<br>'
+        'Scanned by ${exportSection.section.operatorName}<br>'
         'Item count: ${exportSection.items.length}<p>--<p>'
         'Attachment file name: $name',
     subject: 'Scan for `${exportSection.project.name}`',

@@ -88,13 +88,21 @@ class _ProjectList extends ConsumerWidget {
           title: Text(project.name),
           isThreeLine: true,
           subtitle: Text(
-              'Owner: ${project.owner}\nCreated: ${project.created.format()}'),
-          onTap: () {
-            ref.read(projectIdProvider.notifier).state = project.id;
-            Navigator.pushNamed(
-              context,
-              SectionsScreen.routeName,
-            ).then((value) => ref.invalidate(_controllerProvider));
+              'Details: ${project.details}\nCreated: ${project.created.format()}'),
+          onTap: () async {
+            ref
+                .read(itemRepositoryProvider)
+                .setActiveProject(projectId: project.id);
+
+            ref.read(_controllerProvider.notifier).updateProject(Project(
+                project.id,
+                project.name,
+                project.details,
+                project.created,
+                DateTime.now()));
+
+            Navigator.pushNamedAndRemoveUntil(
+                context, SectionsScreen.routeName, (route) => false);
           },
         );
       });
