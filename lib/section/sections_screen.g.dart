@@ -20,7 +20,7 @@ final projectIdProvider = NotifierProvider<ProjectId, int>.internal(
 );
 
 typedef _$ProjectId = Notifier<int>;
-String _$controllerHash() => r'c55acf0a27384e1879be786e1363143baa956323';
+String _$controllerHash() => r'7a535fab75472cae47decbcf9fd6a8dec6a0ad41';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)

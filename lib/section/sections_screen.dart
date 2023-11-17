@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,6 +31,9 @@ class _Controller extends _$Controller {
   Future<List<ExportSection>?> _read() async {
     final repository = ref.read(itemRepositoryProvider);
     final projectId = await repository.getActiveProject();
+    if (kDebugMode) {
+      print('Sections for project $projectId');
+    }
     ref.read(projectIdProvider.notifier).update(projectId);
     // does project exist?
     final projects = await repository.getProjects();
@@ -87,18 +91,20 @@ class SectionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(_controllerProvider);
+    final hasProjects = state.hasValue && state.value != null;
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.folder_copy_outlined),
-              tooltip: 'Manage projects',
-              onPressed: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                    ProjectsScreen.routeName, (route) => false);
-              },
-            ),
+            if (hasProjects)
+              IconButton(
+                icon: const Icon(Icons.folder_copy_outlined),
+                tooltip: 'Manage projects',
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, ProjectsScreen.routeName, (route) => false);
+                },
+              ),
           ],
           title: const Text('Sections'),
         ),
@@ -110,31 +116,28 @@ class SectionsScreen extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             data: (sections) => sections != null
                 ? _SectionList(sections)
-                : FirstScanDialog(after: () {
+                : FirstScanDialog(onCreate: () {
                     ref.read(_controllerProvider.notifier).loadSections();
                   }),
           ),
         ),
-        floatingActionButton: state.whenOrNull(
-            data: (sections) => sections == null
-                ? null
-                : FloatingActionButton.extended(
-                    onPressed: () async {
-                      Section? section = await showAdaptiveDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return SectionDialog(
-                                projectId: ref.read(projectIdProvider));
-                          });
-                      if (section != null) {
-                        ref
-                            .read(_controllerProvider.notifier)
-                            .addSection(section);
-                      }
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('New section'),
-                  )));
+        floatingActionButton: hasProjects
+            ? FloatingActionButton.extended(
+                onPressed: () async {
+                  Section? section = await showAdaptiveDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return SectionDialog(
+                            projectId: ref.read(projectIdProvider));
+                      });
+                  if (section != null) {
+                    ref.read(_controllerProvider.notifier).addSection(section);
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('New section'),
+              )
+            : null);
   }
 }
 

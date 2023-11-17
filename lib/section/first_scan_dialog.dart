@@ -8,9 +8,9 @@ import '../domain/models.dart';
 class FirstScanDialog extends ConsumerStatefulWidget {
   final int? projectId;
 
-  final void Function() after;
+  final void Function() onCreate;
 
-  const FirstScanDialog({super.key, this.projectId, required this.after});
+  const FirstScanDialog({super.key, this.projectId, required this.onCreate});
 
   @override
   ConsumerState<FirstScanDialog> createState() => _FirstScanDialogState();
@@ -134,7 +134,7 @@ class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
                         controller: operatorNameController,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-                          labelText: 'Author',
+                          labelText: 'Operator',
                         )),
                     const SizedBox(height: 16),
                     Row(
@@ -177,16 +177,11 @@ class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
                                     ref
                                         .read(currentSectionProvider.notifier)
                                         .update(newSection);
-                                    if (mounted) {
-                                      await Navigator.pushNamed(
-                                        context,
-                                        ScannerScreen.routeName,
-                                      );
-                                      widget.after.call();
-                                    }
+
+                                    widget.onCreate.call();
                                   }
                                 : null,
-                            child: const Text('Create project & Scan')),
+                            child: const Text('Create project')),
                       ],
                     )
                     // Text('Name of the person who is scanning the section.', style: Theme.of(context).textTheme.bodySmall,),
