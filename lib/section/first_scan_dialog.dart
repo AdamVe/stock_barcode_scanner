@@ -149,23 +149,26 @@ class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
                                     final projectId =
                                         await repository.addProject(
                                             project: Project(
-                                      0,
-                                      projectNameController.text,
-                                      '',
-                                      createdAccessedDate,
-                                      createdAccessedDate,
+                                      id: 0,
+                                      name: projectNameController.text,
+                                      details: '',
+                                      created: createdAccessedDate,
+                                      accessed: createdAccessedDate,
                                     ));
                                     await repository.setActiveProject(
                                         projectId: projectId);
                                     final sectionId =
                                         await repository.addSection(
                                             section: Section(
-                                                0,
-                                                projectId,
-                                                sectionIdController.text,
-                                                sectionDetailsController.text,
-                                                operatorNameController.text,
-                                                DateTime.now()));
+                                                id: 0,
+                                                projectId: projectId,
+                                                name: sectionIdController.text,
+                                                details:
+                                                    sectionDetailsController
+                                                        .text,
+                                                operatorName:
+                                                    operatorNameController.text,
+                                                created: DateTime.now()));
                                     final newSection = (await repository
                                             .getSections(projectId: projectId))
                                         .where((section) =>

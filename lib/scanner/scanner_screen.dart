@@ -28,10 +28,16 @@ class _BarcodeData {
   _BarcodeData(this.rowId, this.value, this.created, this.count);
 }
 
-final sectionProvider =
-    StateProvider<Section>((ref) => Section(0, 0, '', '', '', DateTime(0)));
-final barcodeProvider =
-    StateProvider<_BarcodeData>((ref) => _BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0));
+final sectionProvider = StateProvider<Section>((ref) => Section(
+      id: 0,
+      projectId: 0,
+      name: '',
+      details: '',
+      operatorName: '',
+      created: DateTime(0),
+    ));
+final barcodeProvider = StateProvider<_BarcodeData>(
+    (ref) => _BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0));
 final detectedBarcodeProvider = StateProvider<String>((ref) => '');
 final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
 final duplicateProvider = StateProvider((ref) => false);
@@ -140,12 +146,12 @@ class ScannerScreen extends ConsumerWidget {
         ref
             .read(_controllerProvider.notifier)
             .addScannedItem(ScannedItem(
-              0,
-              section.id,
-              next,
-              createdUpdatedDate,
-              createdUpdatedDate,
-              1,
+              id: 0,
+              sectionId: section.id,
+              barcode: next,
+              created: createdUpdatedDate,
+              updated: createdUpdatedDate,
+              count: 1,
             ))
             .then((rowId) => ref.read(barcodeProvider.notifier).state =
                 _BarcodeData(rowId, next, createdUpdatedDate, 1));
@@ -296,12 +302,12 @@ class _AdjustScanCountWidget extends ConsumerWidget {
     int count = barcode.count + amount;
     HapticFeedback.mediumImpact();
     ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
-          barcode.rowId,
-          sectionId,
-          barcode.value,
-          barcode.created,
-          DateTime.now(),
-          count,
+          id: barcode.rowId,
+          sectionId: sectionId,
+          barcode: barcode.value,
+          created: barcode.created,
+          updated: DateTime.now(),
+          count: count,
         ));
 
     ref.read(barcodeProvider.notifier).state =

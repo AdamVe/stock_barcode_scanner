@@ -95,11 +95,11 @@ class _ProjectList extends ConsumerWidget {
                 .setActiveProject(projectId: project.id);
 
             ref.read(_controllerProvider.notifier).updateProject(Project(
-                project.id,
-                project.name,
-                project.details,
-                project.created,
-                DateTime.now()));
+                id: project.id,
+                name: project.name,
+                details: project.details,
+                created: project.created,
+                accessed: DateTime.now()));
 
             Navigator.pushNamedAndRemoveUntil(
                 context, SectionsScreen.routeName, (route) => false);

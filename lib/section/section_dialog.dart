@@ -61,12 +61,12 @@ class _SectionDialogState extends State<SectionDialog> {
                 ? null
                 : () {
                     final section = Section(
-                      widget.section?.id ?? 0,
-                      widget.section?.projectId ?? widget.projectId!,
-                      sectionNameController.text,
-                      detailsController.text,
-                      operatorNameController.text,
-                      widget.section?.created ?? DateTime.now(),
+                      id: widget.section?.id ?? 0,
+                      projectId: widget.section?.projectId ?? widget.projectId!,
+                      name: sectionNameController.text,
+                      details: detailsController.text,
+                      operatorName: operatorNameController.text,
+                      created: widget.section?.created ?? DateTime.now(),
                     );
                     Navigator.of(context).pop(section);
                   },

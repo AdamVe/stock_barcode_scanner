@@ -71,7 +71,7 @@ class DbConnector {
     final rs = _db.select('''
       SELECT * FROM $kTableProject ORDER BY last_access_date DESC
     ''');
-    return rs.map((row) => Project.fromRow(row)).toList();
+    return rs.map((row) => ProjectDbHelper.projectFromRow(row)).toList();
   }
 
   static int addProject(Project project) {
@@ -108,7 +108,7 @@ class DbConnector {
       SELECT * FROM $kTableSection where project_id = $projectId 
       ORDER BY created_date
     ''');
-    return rs.map((row) => Section.fromRow(row)).toList();
+    return rs.map((row) => ProjectDbHelper.sectionFromRow(row)).toList();
   }
 
   static int addSection(Section section) {
@@ -146,7 +146,7 @@ class DbConnector {
     final rs = _db.select(
         'SELECT * FROM $kTableScannedItem where section_id = $sectionId '
         'ORDER BY created_date DESC');
-    return rs.map((row) => ScannedItem.fromRow(row)).toList();
+    return rs.map((row) => ProjectDbHelper.scannedItemFromRow(row)).toList();
   }
 
   static int addScannedItem(ScannedItem scannedItem) {

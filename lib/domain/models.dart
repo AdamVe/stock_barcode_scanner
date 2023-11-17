@@ -1,107 +1,77 @@
+import 'package:flutter/foundation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:sqlite3/common.dart';
 
-class Project {
-  final int id;
-  final String name;
-  final String details;
-  final DateTime created;
-  final DateTime accessed;
+part 'models.freezed.dart';
 
-  const Project(this.id, this.name, this.details, this.created, this.accessed);
+part 'models.g.dart';
 
-  factory Project.fromRow(Row row) => Project(
-        row['id'],
-        row['name'],
-        row['details'],
-        DateTime.fromMillisecondsSinceEpoch(row['created_date']),
-        DateTime.fromMillisecondsSinceEpoch(row['last_access_date']),
+@freezed
+class Project with _$Project {
+  const factory Project({
+    required int id,
+    required String name,
+    required String details,
+    required DateTime created,
+    required DateTime accessed,
+  }) = _Project;
+
+  factory Project.fromJson(Map<String, Object?> json) =>
+      _$ProjectFromJson(json);
+}
+
+@freezed
+class Section with _$Section {
+  const factory Section({
+    required int id,
+    required int projectId,
+    required String name,
+    required String details,
+    required String operatorName,
+    required DateTime created,
+  }) = _Section;
+
+  factory Section.fromJson(Map<String, Object?> json) =>
+      _$SectionFromJson(json);
+}
+
+@freezed
+class ScannedItem with _$ScannedItem {
+  const factory ScannedItem({
+    required int id,
+    required int sectionId,
+    required String barcode,
+    required DateTime created,
+    required DateTime updated,
+    required int count,
+  }) = _ScannedItem;
+
+  factory ScannedItem.fromJson(Map<String, Object?> json) =>
+      _$ScannedItemFromJson(json);
+}
+
+class ProjectDbHelper {
+  static Project projectFromRow(Row row) => Project(
+        id: row['id'],
+        name: row['name'],
+        details: row['details'],
+        created: DateTime.fromMillisecondsSinceEpoch(row['created_date']),
+        accessed: DateTime.fromMillisecondsSinceEpoch(row['last_access_date']),
       );
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'details': name,
-        'created_date': created.millisecondsSinceEpoch,
-        'last_access_date': accessed.millisecondsSinceEpoch
-      };
-}
+  static Section sectionFromRow(Row row) => Section(
+      id: row['id'],
+      projectId: row['project_id'],
+      name: row['name'],
+      details: row['details'],
+      operatorName: row['operator_name'],
+      created: DateTime.fromMillisecondsSinceEpoch(row['created_date']));
 
-class Section {
-  final int id;
-  final int projectId;
-  final String name;
-  final String details;
-  final String operatorName;
-  final DateTime created;
-
-  Section(
-    this.id,
-    this.projectId,
-    this.name,
-    this.details,
-    this.operatorName,
-    this.created,
-  );
-
-  factory Section.fromRow(Row row) => Section(
-      row['id'],
-      row['project_id'],
-      row['name'],
-      row['details'],
-      row['operator_name'],
-      DateTime.fromMillisecondsSinceEpoch(row['created_date']));
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'projectId': projectId,
-        'name': name,
-        'details': details,
-        'operator_name': operatorName,
-        'created_date': created.millisecondsSinceEpoch
-      };
-}
-
-class ScannedItem {
-  final int id;
-  final int sectionId;
-  final String barcode;
-  final DateTime created;
-  final DateTime updated;
-  final int count;
-
-  ScannedItem(
-    this.id,
-    this.sectionId,
-    this.barcode,
-    this.created,
-    this.updated,
-    this.count,
-  );
-
-  factory ScannedItem.fromRow(Row row) => ScannedItem(
-      row['id'],
-      row['section_id'],
-      row['barcode'],
-      DateTime.fromMillisecondsSinceEpoch(row['created_date']),
-      DateTime.fromMillisecondsSinceEpoch(row['updated_date']),
-      row['count']);
-
-  ScannedItem.fromJson(Map<String, dynamic> json)
-      : id = json['id'] as int,
-        sectionId = json['section_id'] as int,
-        barcode = json['barcode'] as String,
-        created =
-            DateTime.fromMillisecondsSinceEpoch(json['created_date'] as int),
-        updated =
-            DateTime.fromMillisecondsSinceEpoch(json['updated_date'] as int),
-        count = json['count'] as int;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'section_id': sectionId,
-        'barcode': barcode,
-        'created_date': created.millisecondsSinceEpoch,
-        'updated_date': updated.millisecondsSinceEpoch,
-        'count': count
-      };
+  static ScannedItem scannedItemFromRow(Row row) => ScannedItem(
+      id: row['id'],
+      sectionId: row['section_id'],
+      barcode: row['barcode'],
+      created: DateTime.fromMillisecondsSinceEpoch(row['created_date']),
+      updated: DateTime.fromMillisecondsSinceEpoch(row['updated_date']),
+      count: row['count']);
 }

@@ -58,11 +58,11 @@ class _ProjectDialogState extends State<ProjectDialog> {
                     final createdDate = widget.project?.created ?? accessedDate;
 
                     Navigator.of(context).pop(Project(
-                      widget.project?.id ?? 0,
-                      projectNameController.text,
-                      projectDetailsController.text,
-                      createdDate, // created
-                      accessedDate, // accessed
+                      id: widget.project?.id ?? 0,
+                      name: projectNameController.text,
+                      details: projectDetailsController.text,
+                      created: createdDate, // created
+                      accessed: accessedDate, // accessed
                     ));
                   },
             child: widget.project != null
