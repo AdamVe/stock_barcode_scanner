@@ -15,14 +15,22 @@ part 'sections_screen.g.dart';
 
 enum _SectionAction { actionEditSection, actionDeleteSection }
 
-final projectIdProvider = StateProvider<int>((ref) => -1);
+@Riverpod(keepAlive: true)
+class ProjectId extends _$ProjectId {
+  @override
+  int build() => -1;
+
+  void update(int newProjectId) {
+    state = newProjectId;
+  }
+}
 
 @riverpod
 class _Controller extends _$Controller {
   Future<List<ExportSection>?> _read() async {
     final repository = ref.read(itemRepositoryProvider);
     final projectId = await repository.getActiveProject();
-    ref.read(projectIdProvider.notifier).state = projectId;
+    ref.read(projectIdProvider.notifier).update(projectId);
     // does project exist?
     final projects = await repository.getProjects();
     final projectExists =
@@ -144,7 +152,7 @@ class _SectionList extends ConsumerWidget {
           return SectionCard(
             exportSection: section,
             onScan: () {
-              ref.read(sectionProvider.notifier).state = section.section;
+              ref.read(currentSectionProvider.notifier).update(section.section);
               Navigator.pushNamed(
                 context,
                 ScannerScreen.routeName,

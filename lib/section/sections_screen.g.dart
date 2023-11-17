@@ -6,7 +6,21 @@ part of 'sections_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$controllerHash() => r'457bf21c29b63ba2281c5f6a1b0d594174c51548';
+String _$projectIdHash() => r'9c42fee681ec127c7385e00ca569217c8a46e2ad';
+
+/// See also [ProjectId].
+@ProviderFor(ProjectId)
+final projectIdProvider = NotifierProvider<ProjectId, int>.internal(
+  ProjectId.new,
+  name: r'projectIdProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$projectIdHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ProjectId = Notifier<int>;
+String _$controllerHash() => r'c55acf0a27384e1879be786e1363143baa956323';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)

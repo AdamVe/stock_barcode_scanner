@@ -174,8 +174,9 @@ class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
                                         .where((section) =>
                                             section.id == sectionId)
                                         .first;
-                                    ref.read(sectionProvider.notifier).state =
-                                        newSection;
+                                    ref
+                                        .read(currentSectionProvider.notifier)
+                                        .update(newSection);
                                     if (mounted) {
                                       await Navigator.pushNamed(
                                         context,

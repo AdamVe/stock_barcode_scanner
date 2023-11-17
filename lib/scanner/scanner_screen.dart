@@ -19,28 +19,72 @@ const _scannedItemListHeight = 250.0;
 
 Timer? _timer;
 
-class _BarcodeData {
+class BarcodeData {
   final int rowId;
   final String value;
   final DateTime created;
   final int count;
 
-  _BarcodeData(this.rowId, this.value, this.created, this.count);
+  BarcodeData(this.rowId, this.value, this.created, this.count);
 }
 
-final sectionProvider = StateProvider<Section>((ref) => Section(
-      id: 0,
-      projectId: 0,
-      name: '',
-      details: '',
-      operatorName: '',
-      created: DateTime(0),
-    ));
-final barcodeProvider = StateProvider<_BarcodeData>(
-    (ref) => _BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0));
-final detectedBarcodeProvider = StateProvider<String>((ref) => '');
-final lastSeenBarcodeProvider = StateProvider<String>((ref) => '');
-final duplicateProvider = StateProvider((ref) => false);
+@Riverpod(keepAlive: true)
+class CurrentSection extends _$CurrentSection {
+  @override
+  Section build() => Section(
+        id: 0,
+        projectId: 0,
+        name: '',
+        details: '',
+        operatorName: '',
+        created: DateTime(0),
+      );
+
+  void update(Section sectionId) {
+    state = sectionId;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class CurrentBarcode extends _$CurrentBarcode {
+  @override
+  BarcodeData build() =>
+      BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0);
+
+  void update(BarcodeData newBarcodeData) {
+    state = newBarcodeData;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class DetectedBarcode extends _$DetectedBarcode {
+  @override
+  String build() => '';
+
+  void update(String newValue) {
+    state = newValue;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class LastSeenBarcode extends _$LastSeenBarcode {
+  @override
+  String build() => '';
+
+  void update(String newValue) {
+    state = newValue;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class Duplicate extends _$Duplicate {
+  @override
+  bool build() => false;
+
+  void update(bool newValue) {
+    state = newValue;
+  }
+}
 
 final scanSoundProvider = Provider((ref) {
   final player = AudioPlayer()
@@ -75,7 +119,7 @@ final duplicateSoundProvider = Provider((ref) {
 class _Controller extends _$Controller {
   Future<List<ScannedItem>> _read() async {
     final sectionId =
-        ref.watch(sectionProvider.select((section) => section.id));
+        ref.watch(currentSectionProvider.select((section) => section.id));
     return ref.watch(itemRepositoryProvider
         .select((repository) => repository.getScans(sectionId: sectionId)));
   }
@@ -83,7 +127,7 @@ class _Controller extends _$Controller {
   @override
   FutureOr<List<ScannedItem>> build() {
     ref.invalidate(duplicateProvider);
-    ref.invalidate(barcodeProvider);
+    ref.invalidate(currentBarcodeProvider);
     ref.invalidate(detectedBarcodeProvider);
     ref.invalidate(lastSeenBarcodeProvider);
     return _read();
@@ -119,7 +163,7 @@ class ScannerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scanSound = ref.watch(scanSoundProvider);
-    final section = ref.watch(sectionProvider);
+    final section = ref.watch(currentSectionProvider);
     var controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
       detectionTimeoutMs: 350,
@@ -153,14 +197,15 @@ class ScannerScreen extends ConsumerWidget {
               updated: createdUpdatedDate,
               count: 1,
             ))
-            .then((rowId) => ref.read(barcodeProvider.notifier).state =
-                _BarcodeData(rowId, next, createdUpdatedDate, 1));
+            .then((rowId) => ref
+                .read(currentBarcodeProvider.notifier)
+                .update(BarcodeData(rowId, next, createdUpdatedDate, 1)));
       } else {
         if (previous?.isEmpty ?? true) {
           if (kDebugMode) {
             print('Notifying duplicate scan');
           }
-          ref.read(duplicateProvider.notifier).state = true;
+          ref.read(duplicateProvider.notifier).update(true);
         }
         if (kDebugMode) {
           print('See old barcode: $next');
@@ -204,14 +249,20 @@ class ScannerScreen extends ConsumerWidget {
                                 ?.rawValue! ??
                             '';
 
+                        if (kDebugMode) {
+                          print('Detected barcode: $currentBarcode');
+                        }
+
                         if (currentBarcode.isNotEmpty) {
                           _timer?.cancel();
 
-                          ref.read(detectedBarcodeProvider.notifier).state =
-                              currentBarcode;
+                          ref
+                              .read(detectedBarcodeProvider.notifier)
+                              .update(currentBarcode);
 
-                          ref.read(lastSeenBarcodeProvider.notifier).state =
-                              currentBarcode;
+                          ref
+                              .read(lastSeenBarcodeProvider.notifier)
+                              .update(currentBarcode);
 
                           // start timer to clear the code if not detected
                           _timer = Timer(const Duration(milliseconds: 750), () {
@@ -219,8 +270,9 @@ class ScannerScreen extends ConsumerWidget {
                               print('clearing detected barcode');
                             }
 
-                            ref.read(detectedBarcodeProvider.notifier).state =
-                                '';
+                            ref
+                                .read(detectedBarcodeProvider.notifier)
+                                .update('');
                           });
                         }
                       },
@@ -297,8 +349,8 @@ class _AdjustScanCountWidget extends ConsumerWidget {
 
   void _update(WidgetRef ref, int amount) {
     final sectionId =
-        ref.watch(sectionProvider.select((section) => section.id));
-    final barcode = ref.watch(barcodeProvider);
+        ref.watch(currentSectionProvider.select((section) => section.id));
+    final barcode = ref.watch(currentBarcodeProvider);
     int count = barcode.count + amount;
     HapticFeedback.mediumImpact();
     ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
@@ -310,13 +362,13 @@ class _AdjustScanCountWidget extends ConsumerWidget {
           count: count,
         ));
 
-    ref.read(barcodeProvider.notifier).state =
-        _BarcodeData(barcode.rowId, barcode.value, barcode.created, count);
+    ref.read(currentBarcodeProvider.notifier).update(
+        BarcodeData(barcode.rowId, barcode.value, barcode.created, count));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final barcode = ref.watch(barcodeProvider);
+    final barcode = ref.watch(currentBarcodeProvider);
     return PositionedDirectional(
         start: 0,
         end: 0,
@@ -622,7 +674,7 @@ class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
             if (kDebugMode) {
               print('Clearing duplicate scan notification');
             }
-            ref.read(duplicateProvider.notifier).state = false;
+            ref.read(duplicateProvider.notifier).update(false);
           });
         });
 

@@ -6,7 +6,85 @@ part of 'scanner_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$controllerHash() => r'67d495ece4eacbffb060d6182ac3ebceffb5842e';
+String _$currentSectionHash() => r'4e952973b233e3aefc2f4518e167ad7c4ca52941';
+
+/// See also [CurrentSection].
+@ProviderFor(CurrentSection)
+final currentSectionProvider =
+    NotifierProvider<CurrentSection, Section>.internal(
+  CurrentSection.new,
+  name: r'currentSectionProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$currentSectionHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CurrentSection = Notifier<Section>;
+String _$currentBarcodeHash() => r'd2aeacf79e080a7bc526ee636cb9a9e8bd7680e3';
+
+/// See also [CurrentBarcode].
+@ProviderFor(CurrentBarcode)
+final currentBarcodeProvider =
+    NotifierProvider<CurrentBarcode, BarcodeData>.internal(
+  CurrentBarcode.new,
+  name: r'currentBarcodeProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$currentBarcodeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CurrentBarcode = Notifier<BarcodeData>;
+String _$detectedBarcodeHash() => r'92757cfd343bcbff45daca10b210fe1050db100b';
+
+/// See also [DetectedBarcode].
+@ProviderFor(DetectedBarcode)
+final detectedBarcodeProvider =
+    NotifierProvider<DetectedBarcode, String>.internal(
+  DetectedBarcode.new,
+  name: r'detectedBarcodeProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$detectedBarcodeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$DetectedBarcode = Notifier<String>;
+String _$lastSeenBarcodeHash() => r'975ea17d3269495e99b83f0f25c33d3aeb016430';
+
+/// See also [LastSeenBarcode].
+@ProviderFor(LastSeenBarcode)
+final lastSeenBarcodeProvider =
+    NotifierProvider<LastSeenBarcode, String>.internal(
+  LastSeenBarcode.new,
+  name: r'lastSeenBarcodeProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$lastSeenBarcodeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$LastSeenBarcode = Notifier<String>;
+String _$duplicateHash() => r'c89b999fd815ac935421b10fa7df2ac907ab5307';
+
+/// See also [Duplicate].
+@ProviderFor(Duplicate)
+final duplicateProvider = NotifierProvider<Duplicate, bool>.internal(
+  Duplicate.new,
+  name: r'duplicateProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$duplicateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$Duplicate = Notifier<bool>;
+String _$controllerHash() => r'c034c82166eae5d874b098d8de9b072caf0234a6';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)
