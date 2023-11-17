@@ -19,15 +19,6 @@ const _scannedItemListHeight = 250.0;
 
 Timer? _timer;
 
-class BarcodeData {
-  final int rowId;
-  final String value;
-  final DateTime created;
-  final int count;
-
-  BarcodeData(this.rowId, this.value, this.created, this.count);
-}
-
 @Riverpod(keepAlive: true)
 class CurrentSection extends _$CurrentSection {
   @override
@@ -48,11 +39,16 @@ class CurrentSection extends _$CurrentSection {
 @Riverpod(keepAlive: true)
 class CurrentBarcode extends _$CurrentBarcode {
   @override
-  BarcodeData build() =>
-      BarcodeData(0, '', DateTime.fromMillisecondsSinceEpoch(0), 0);
+  ScannedItem build() => ScannedItem(
+      id: 0,
+      sectionId: 0,
+      barcode: '',
+      created: DateTime.fromMillisecondsSinceEpoch(0),
+      updated: DateTime.fromMillisecondsSinceEpoch(0),
+      count: 0);
 
-  void update(BarcodeData newBarcodeData) {
-    state = newBarcodeData;
+  void update(ScannedItem newValue) {
+    state = newValue;
   }
 }
 
@@ -189,19 +185,21 @@ class ScannerScreen extends ConsumerWidget {
 
         final createdUpdatedDate = DateTime.now();
 
+        final newScannedItem = ScannedItem(
+          id: 0,
+          sectionId: section.id,
+          barcode: next,
+          created: createdUpdatedDate,
+          updated: createdUpdatedDate,
+          count: 1,
+        );
+
         ref
             .read(_controllerProvider.notifier)
-            .addScannedItem(ScannedItem(
-              id: 0,
-              sectionId: section.id,
-              barcode: next,
-              created: createdUpdatedDate,
-              updated: createdUpdatedDate,
-              count: 1,
-            ))
-            .then((rowId) => ref
+            .addScannedItem(newScannedItem)
+            .then((id) => ref
                 .read(currentBarcodeProvider.notifier)
-                .update(BarcodeData(rowId, next, createdUpdatedDate, 1)));
+                .update(newScannedItem.copyWith(id: id)));
       } else {
         if (previous?.isEmpty ?? true) {
           if (kDebugMode) {
@@ -352,25 +350,23 @@ class _AdjustScanCountWidget extends ConsumerWidget {
   void _update(WidgetRef ref, int amount) {
     final sectionId =
         ref.watch(currentSectionProvider.select((section) => section.id));
-    final barcode = ref.watch(currentBarcodeProvider);
-    int count = barcode.count + amount;
+    final currentBarcode = ref.watch(currentBarcodeProvider);
+    final updatedScannedItem = currentBarcode.copyWith(
+      sectionId: sectionId,
+      updated: DateTime.now(),
+      count: currentBarcode.count + amount,
+    );
     HapticFeedback.mediumImpact();
-    ref.read(_controllerProvider.notifier).updateScannedItem(ScannedItem(
-          id: barcode.rowId,
-          sectionId: sectionId,
-          barcode: barcode.value,
-          created: barcode.created,
-          updated: DateTime.now(),
-          count: count,
-        ));
+    ref
+        .read(_controllerProvider.notifier)
+        .updateScannedItem(updatedScannedItem);
 
-    ref.read(currentBarcodeProvider.notifier).update(
-        BarcodeData(barcode.rowId, barcode.value, barcode.created, count));
+    ref.read(currentBarcodeProvider.notifier).update(updatedScannedItem);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final barcode = ref.watch(currentBarcodeProvider);
+    final currentBarcode = ref.watch(currentBarcodeProvider);
     return PositionedDirectional(
         start: 0,
         end: 0,
@@ -378,17 +374,18 @@ class _AdjustScanCountWidget extends ConsumerWidget {
         child: Column(
           children: [
             Text(
-              barcode.value,
+              currentBarcode.barcode,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            if (barcode.value.isNotEmpty)
+            if (currentBarcode.barcode.isNotEmpty)
               Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                      onPressed:
-                          barcode.count > 1 ? () => _update(ref, -1) : null,
+                      onPressed: currentBarcode.count > 1
+                          ? () => _update(ref, -1)
+                          : null,
                       child: const Icon(
                         Icons.remove,
                         size: 32,
@@ -396,13 +393,14 @@ class _AdjustScanCountWidget extends ConsumerWidget {
                   SizedBox(
                       width: 64,
                       child: Text(
-                        barcode.count.toString(),
+                        currentBarcode.count.toString(),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall,
                       )),
                   ElevatedButton(
-                      onPressed:
-                          barcode.count < 1000 ? () => _update(ref, 1) : null,
+                      onPressed: currentBarcode.count < 1000
+                          ? () => _update(ref, 1)
+                          : null,
                       child: const Icon(
                         Icons.add,
                         size: 32,

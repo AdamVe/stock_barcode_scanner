@@ -51,12 +51,12 @@ final currentSectionProvider =
 );
 
 typedef _$CurrentSection = Notifier<Section>;
-String _$currentBarcodeHash() => r'd2aeacf79e080a7bc526ee636cb9a9e8bd7680e3';
+String _$currentBarcodeHash() => r'1bfef1a85a962c3f70f267f2aa3264ce44ffb77d';
 
 /// See also [CurrentBarcode].
 @ProviderFor(CurrentBarcode)
 final currentBarcodeProvider =
-    NotifierProvider<CurrentBarcode, BarcodeData>.internal(
+    NotifierProvider<CurrentBarcode, ScannedItem>.internal(
   CurrentBarcode.new,
   name: r'currentBarcodeProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -66,7 +66,7 @@ final currentBarcodeProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$CurrentBarcode = Notifier<BarcodeData>;
+typedef _$CurrentBarcode = Notifier<ScannedItem>;
 String _$detectedBarcodeHash() => r'92757cfd343bcbff45daca10b210fe1050db100b';
 
 /// See also [DetectedBarcode].
