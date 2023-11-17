@@ -2,9 +2,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/models.dart';
 
-final itemRepositoryProvider = Provider<ItemRepository>((ref) {
+part 'item_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+ItemRepository itemRepository(ItemRepositoryRef ref) =>
   throw UnimplementedError();
-});
 
 abstract class ItemRepository {
   Future<List<Project>> getProjects();

@@ -6,6 +6,35 @@ part of 'scanner_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$scanSoundHash() => r'5d86405225f191aca32a8d7ef143dcbe6df83f6e';
+
+/// See also [scanSound].
+@ProviderFor(scanSound)
+final scanSoundProvider = Provider<AudioPlayer>.internal(
+  scanSound,
+  name: r'scanSoundProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$scanSoundHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef ScanSoundRef = ProviderRef<AudioPlayer>;
+String _$duplicateSoundHash() => r'1b2c2068501701d6bc028ee0587f3dac53f65694';
+
+/// See also [duplicateSound].
+@ProviderFor(duplicateSound)
+final duplicateSoundProvider = Provider<AudioPlayer>.internal(
+  duplicateSound,
+  name: r'duplicateSoundProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$duplicateSoundHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef DuplicateSoundRef = ProviderRef<AudioPlayer>;
 String _$currentSectionHash() => r'4e952973b233e3aefc2f4518e167ad7c4ca52941';
 
 /// See also [CurrentSection].

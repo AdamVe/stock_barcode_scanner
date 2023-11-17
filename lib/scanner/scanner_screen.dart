@@ -86,7 +86,8 @@ class Duplicate extends _$Duplicate {
   }
 }
 
-final scanSoundProvider = Provider((ref) {
+@Riverpod(keepAlive: true)
+AudioPlayer scanSound(ScanSoundRef ref) {
   final player = AudioPlayer()
     ..setSource(AssetSource('sounds/scan.wav'))
     ..setReleaseMode(ReleaseMode.stop);
@@ -99,9 +100,10 @@ final scanSoundProvider = Provider((ref) {
   });
 
   return player;
-});
+}
 
-final duplicateSoundProvider = Provider((ref) {
+@Riverpod(keepAlive: true)
+AudioPlayer duplicateSound(DuplicateSoundRef ref) {
   final player = AudioPlayer()
     ..setSource(AssetSource('sounds/duplicate.wav'))
     ..setReleaseMode(ReleaseMode.stop);
@@ -113,7 +115,7 @@ final duplicateSoundProvider = Provider((ref) {
     player.dispose();
   });
   return player;
-});
+}
 
 @riverpod
 class _Controller extends _$Controller {
