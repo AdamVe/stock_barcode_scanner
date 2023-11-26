@@ -6,7 +6,7 @@ import 'package:stock_barcode_scanner/section/project_screen.dart';
 import 'package:stock_barcode_scanner/data/sqlite_item_repository.dart';
 
 import 'data/db.dart';
-import 'project/project_manager_screen.dart';
+import 'project_manager/project_manager_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
