@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
-import 'package:stock_barcode_scanner/section/project_screen.dart';
+import 'package:stock_barcode_scanner/project/project_screen.dart';
 
 import '../domain/models.dart';
 import 'project_dialog.dart';
