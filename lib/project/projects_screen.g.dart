@@ -6,7 +6,7 @@ part of 'projects_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$controllerHash() => r'e5dc403a7e6253fd313769914153582a1e4afac3';
+String _$controllerHash() => r'0fe36b6465ac1a1db6219da39f0655df36436ce8';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)

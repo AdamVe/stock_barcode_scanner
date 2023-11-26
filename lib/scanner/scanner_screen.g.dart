@@ -35,7 +35,7 @@ final duplicateSoundProvider = Provider<AudioPlayer>.internal(
 );
 
 typedef DuplicateSoundRef = ProviderRef<AudioPlayer>;
-String _$currentSectionHash() => r'4e952973b233e3aefc2f4518e167ad7c4ca52941';
+String _$currentSectionHash() => r'61ed4445e0dd548f3008cd446aeb811055745a2e';
 
 /// See also [CurrentSection].
 @ProviderFor(CurrentSection)
@@ -51,7 +51,7 @@ final currentSectionProvider =
 );
 
 typedef _$CurrentSection = Notifier<Section>;
-String _$currentBarcodeHash() => r'1bfef1a85a962c3f70f267f2aa3264ce44ffb77d';
+String _$currentBarcodeHash() => r'bf727685843b3207bb318f9848ee0b21997196d7';
 
 /// See also [CurrentBarcode].
 @ProviderFor(CurrentBarcode)
@@ -113,7 +113,7 @@ final duplicateProvider = NotifierProvider<Duplicate, bool>.internal(
 );
 
 typedef _$Duplicate = Notifier<bool>;
-String _$controllerHash() => r'c034c82166eae5d874b098d8de9b072caf0234a6';
+String _$controllerHash() => r'1a225f47ec6d3aaf5c734f758e9dc7f3c1ab1e3b';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)

@@ -25,6 +25,7 @@ mixin _$Project {
   String get details => throw _privateConstructorUsedError;
   DateTime get created => throw _privateConstructorUsedError;
   DateTime get accessed => throw _privateConstructorUsedError;
+  List<Section> get sections => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -41,7 +42,8 @@ abstract class $ProjectCopyWith<$Res> {
       String name,
       String details,
       DateTime created,
-      DateTime accessed});
+      DateTime accessed,
+      List<Section> sections});
 }
 
 /// @nodoc
@@ -62,6 +64,7 @@ class _$ProjectCopyWithImpl<$Res, $Val extends Project>
     Object? details = null,
     Object? created = null,
     Object? accessed = null,
+    Object? sections = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -84,6 +87,10 @@ class _$ProjectCopyWithImpl<$Res, $Val extends Project>
           ? _value.accessed
           : accessed // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      sections: null == sections
+          ? _value.sections
+          : sections // ignore: cast_nullable_to_non_nullable
+              as List<Section>,
     ) as $Val);
   }
 }
@@ -100,7 +107,8 @@ abstract class _$$ProjectImplCopyWith<$Res> implements $ProjectCopyWith<$Res> {
       String name,
       String details,
       DateTime created,
-      DateTime accessed});
+      DateTime accessed,
+      List<Section> sections});
 }
 
 /// @nodoc
@@ -119,6 +127,7 @@ class __$$ProjectImplCopyWithImpl<$Res>
     Object? details = null,
     Object? created = null,
     Object? accessed = null,
+    Object? sections = null,
   }) {
     return _then(_$ProjectImpl(
       id: null == id
@@ -141,19 +150,25 @@ class __$$ProjectImplCopyWithImpl<$Res>
           ? _value.accessed
           : accessed // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      sections: null == sections
+          ? _value._sections
+          : sections // ignore: cast_nullable_to_non_nullable
+              as List<Section>,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$ProjectImpl with DiagnosticableTreeMixin implements _Project {
+class _$ProjectImpl implements _Project {
   const _$ProjectImpl(
       {required this.id,
       required this.name,
       required this.details,
       required this.created,
-      required this.accessed});
+      required this.accessed,
+      required final List<Section> sections})
+      : _sections = sections;
 
   factory _$ProjectImpl.fromJson(Map<String, dynamic> json) =>
       _$$ProjectImplFromJson(json);
@@ -168,22 +183,17 @@ class _$ProjectImpl with DiagnosticableTreeMixin implements _Project {
   final DateTime created;
   @override
   final DateTime accessed;
-
+  final List<Section> _sections;
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Project(id: $id, name: $name, details: $details, created: $created, accessed: $accessed)';
+  List<Section> get sections {
+    if (_sections is EqualUnmodifiableListView) return _sections;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_sections);
   }
 
   @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty('type', 'Project'))
-      ..add(DiagnosticsProperty('id', id))
-      ..add(DiagnosticsProperty('name', name))
-      ..add(DiagnosticsProperty('details', details))
-      ..add(DiagnosticsProperty('created', created))
-      ..add(DiagnosticsProperty('accessed', accessed));
+  String toString() {
+    return 'Project(id: $id, name: $name, details: $details, created: $created, accessed: $accessed, sections: $sections)';
   }
 
   @override
@@ -196,13 +206,14 @@ class _$ProjectImpl with DiagnosticableTreeMixin implements _Project {
             (identical(other.details, details) || other.details == details) &&
             (identical(other.created, created) || other.created == created) &&
             (identical(other.accessed, accessed) ||
-                other.accessed == accessed));
+                other.accessed == accessed) &&
+            const DeepCollectionEquality().equals(other._sections, _sections));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, name, details, created, accessed);
+  int get hashCode => Object.hash(runtimeType, id, name, details, created,
+      accessed, const DeepCollectionEquality().hash(_sections));
 
   @JsonKey(ignore: true)
   @override
@@ -224,7 +235,8 @@ abstract class _Project implements Project {
       required final String name,
       required final String details,
       required final DateTime created,
-      required final DateTime accessed}) = _$ProjectImpl;
+      required final DateTime accessed,
+      required final List<Section> sections}) = _$ProjectImpl;
 
   factory _Project.fromJson(Map<String, dynamic> json) = _$ProjectImpl.fromJson;
 
@@ -239,6 +251,8 @@ abstract class _Project implements Project {
   @override
   DateTime get accessed;
   @override
+  List<Section> get sections;
+  @override
   @JsonKey(ignore: true)
   _$$ProjectImplCopyWith<_$ProjectImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -251,11 +265,11 @@ Section _$SectionFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Section {
   int get id => throw _privateConstructorUsedError;
-  int get projectId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get details => throw _privateConstructorUsedError;
   String get operatorName => throw _privateConstructorUsedError;
   DateTime get created => throw _privateConstructorUsedError;
+  List<ScannedItem> get items => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -269,11 +283,11 @@ abstract class $SectionCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      int projectId,
       String name,
       String details,
       String operatorName,
-      DateTime created});
+      DateTime created,
+      List<ScannedItem> items});
 }
 
 /// @nodoc
@@ -290,20 +304,16 @@ class _$SectionCopyWithImpl<$Res, $Val extends Section>
   @override
   $Res call({
     Object? id = null,
-    Object? projectId = null,
     Object? name = null,
     Object? details = null,
     Object? operatorName = null,
     Object? created = null,
+    Object? items = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      projectId: null == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
               as int,
       name: null == name
           ? _value.name
@@ -321,6 +331,10 @@ class _$SectionCopyWithImpl<$Res, $Val extends Section>
           ? _value.created
           : created // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      items: null == items
+          ? _value.items
+          : items // ignore: cast_nullable_to_non_nullable
+              as List<ScannedItem>,
     ) as $Val);
   }
 }
@@ -334,11 +348,11 @@ abstract class _$$SectionImplCopyWith<$Res> implements $SectionCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      int projectId,
       String name,
       String details,
       String operatorName,
-      DateTime created});
+      DateTime created,
+      List<ScannedItem> items});
 }
 
 /// @nodoc
@@ -353,20 +367,16 @@ class __$$SectionImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? projectId = null,
     Object? name = null,
     Object? details = null,
     Object? operatorName = null,
     Object? created = null,
+    Object? items = null,
   }) {
     return _then(_$SectionImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      projectId: null == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
               as int,
       name: null == name
           ? _value.name
@@ -384,28 +394,31 @@ class __$$SectionImplCopyWithImpl<$Res>
           ? _value.created
           : created // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      items: null == items
+          ? _value._items
+          : items // ignore: cast_nullable_to_non_nullable
+              as List<ScannedItem>,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$SectionImpl with DiagnosticableTreeMixin implements _Section {
+class _$SectionImpl implements _Section {
   const _$SectionImpl(
       {required this.id,
-      required this.projectId,
       required this.name,
       required this.details,
       required this.operatorName,
-      required this.created});
+      required this.created,
+      required final List<ScannedItem> items})
+      : _items = items;
 
   factory _$SectionImpl.fromJson(Map<String, dynamic> json) =>
       _$$SectionImplFromJson(json);
 
   @override
   final int id;
-  @override
-  final int projectId;
   @override
   final String name;
   @override
@@ -414,23 +427,17 @@ class _$SectionImpl with DiagnosticableTreeMixin implements _Section {
   final String operatorName;
   @override
   final DateTime created;
-
+  final List<ScannedItem> _items;
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'Section(id: $id, projectId: $projectId, name: $name, details: $details, operatorName: $operatorName, created: $created)';
+  List<ScannedItem> get items {
+    if (_items is EqualUnmodifiableListView) return _items;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_items);
   }
 
   @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty('type', 'Section'))
-      ..add(DiagnosticsProperty('id', id))
-      ..add(DiagnosticsProperty('projectId', projectId))
-      ..add(DiagnosticsProperty('name', name))
-      ..add(DiagnosticsProperty('details', details))
-      ..add(DiagnosticsProperty('operatorName', operatorName))
-      ..add(DiagnosticsProperty('created', created));
+  String toString() {
+    return 'Section(id: $id, name: $name, details: $details, operatorName: $operatorName, created: $created, items: $items)';
   }
 
   @override
@@ -439,19 +446,18 @@ class _$SectionImpl with DiagnosticableTreeMixin implements _Section {
         (other.runtimeType == runtimeType &&
             other is _$SectionImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.projectId, projectId) ||
-                other.projectId == projectId) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.details, details) || other.details == details) &&
             (identical(other.operatorName, operatorName) ||
                 other.operatorName == operatorName) &&
-            (identical(other.created, created) || other.created == created));
+            (identical(other.created, created) || other.created == created) &&
+            const DeepCollectionEquality().equals(other._items, _items));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, projectId, name, details, operatorName, created);
+  int get hashCode => Object.hash(runtimeType, id, name, details, operatorName,
+      created, const DeepCollectionEquality().hash(_items));
 
   @JsonKey(ignore: true)
   @override
@@ -470,18 +476,16 @@ class _$SectionImpl with DiagnosticableTreeMixin implements _Section {
 abstract class _Section implements Section {
   const factory _Section(
       {required final int id,
-      required final int projectId,
       required final String name,
       required final String details,
       required final String operatorName,
-      required final DateTime created}) = _$SectionImpl;
+      required final DateTime created,
+      required final List<ScannedItem> items}) = _$SectionImpl;
 
   factory _Section.fromJson(Map<String, dynamic> json) = _$SectionImpl.fromJson;
 
   @override
   int get id;
-  @override
-  int get projectId;
   @override
   String get name;
   @override
@@ -490,6 +494,8 @@ abstract class _Section implements Section {
   String get operatorName;
   @override
   DateTime get created;
+  @override
+  List<ScannedItem> get items;
   @override
   @JsonKey(ignore: true)
   _$$SectionImplCopyWith<_$SectionImpl> get copyWith =>
@@ -503,7 +509,6 @@ ScannedItem _$ScannedItemFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$ScannedItem {
   int get id => throw _privateConstructorUsedError;
-  int get sectionId => throw _privateConstructorUsedError;
   String get barcode => throw _privateConstructorUsedError;
   DateTime get created => throw _privateConstructorUsedError;
   DateTime get updated => throw _privateConstructorUsedError;
@@ -522,12 +527,7 @@ abstract class $ScannedItemCopyWith<$Res> {
       _$ScannedItemCopyWithImpl<$Res, ScannedItem>;
   @useResult
   $Res call(
-      {int id,
-      int sectionId,
-      String barcode,
-      DateTime created,
-      DateTime updated,
-      int count});
+      {int id, String barcode, DateTime created, DateTime updated, int count});
 }
 
 /// @nodoc
@@ -544,7 +544,6 @@ class _$ScannedItemCopyWithImpl<$Res, $Val extends ScannedItem>
   @override
   $Res call({
     Object? id = null,
-    Object? sectionId = null,
     Object? barcode = null,
     Object? created = null,
     Object? updated = null,
@@ -554,10 +553,6 @@ class _$ScannedItemCopyWithImpl<$Res, $Val extends ScannedItem>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      sectionId: null == sectionId
-          ? _value.sectionId
-          : sectionId // ignore: cast_nullable_to_non_nullable
               as int,
       barcode: null == barcode
           ? _value.barcode
@@ -588,12 +583,7 @@ abstract class _$$ScannedItemImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {int id,
-      int sectionId,
-      String barcode,
-      DateTime created,
-      DateTime updated,
-      int count});
+      {int id, String barcode, DateTime created, DateTime updated, int count});
 }
 
 /// @nodoc
@@ -608,7 +598,6 @@ class __$$ScannedItemImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? sectionId = null,
     Object? barcode = null,
     Object? created = null,
     Object? updated = null,
@@ -618,10 +607,6 @@ class __$$ScannedItemImplCopyWithImpl<$Res>
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      sectionId: null == sectionId
-          ? _value.sectionId
-          : sectionId // ignore: cast_nullable_to_non_nullable
               as int,
       barcode: null == barcode
           ? _value.barcode
@@ -645,10 +630,9 @@ class __$$ScannedItemImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
+class _$ScannedItemImpl implements _ScannedItem {
   const _$ScannedItemImpl(
       {required this.id,
-      required this.sectionId,
       required this.barcode,
       required this.created,
       required this.updated,
@@ -660,8 +644,6 @@ class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
   @override
   final int id;
   @override
-  final int sectionId;
-  @override
   final String barcode;
   @override
   final DateTime created;
@@ -671,21 +653,8 @@ class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
   final int count;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'ScannedItem(id: $id, sectionId: $sectionId, barcode: $barcode, created: $created, updated: $updated, count: $count)';
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties
-      ..add(DiagnosticsProperty('type', 'ScannedItem'))
-      ..add(DiagnosticsProperty('id', id))
-      ..add(DiagnosticsProperty('sectionId', sectionId))
-      ..add(DiagnosticsProperty('barcode', barcode))
-      ..add(DiagnosticsProperty('created', created))
-      ..add(DiagnosticsProperty('updated', updated))
-      ..add(DiagnosticsProperty('count', count));
+  String toString() {
+    return 'ScannedItem(id: $id, barcode: $barcode, created: $created, updated: $updated, count: $count)';
   }
 
   @override
@@ -694,8 +663,6 @@ class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
         (other.runtimeType == runtimeType &&
             other is _$ScannedItemImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.sectionId, sectionId) ||
-                other.sectionId == sectionId) &&
             (identical(other.barcode, barcode) || other.barcode == barcode) &&
             (identical(other.created, created) || other.created == created) &&
             (identical(other.updated, updated) || other.updated == updated) &&
@@ -705,7 +672,7 @@ class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
   @JsonKey(ignore: true)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, sectionId, barcode, created, updated, count);
+      Object.hash(runtimeType, id, barcode, created, updated, count);
 
   @JsonKey(ignore: true)
   @override
@@ -724,7 +691,6 @@ class _$ScannedItemImpl with DiagnosticableTreeMixin implements _ScannedItem {
 abstract class _ScannedItem implements ScannedItem {
   const factory _ScannedItem(
       {required final int id,
-      required final int sectionId,
       required final String barcode,
       required final DateTime created,
       required final DateTime updated,
@@ -735,8 +701,6 @@ abstract class _ScannedItem implements ScannedItem {
 
   @override
   int get id;
-  @override
-  int get sectionId;
   @override
   String get barcode;
   @override

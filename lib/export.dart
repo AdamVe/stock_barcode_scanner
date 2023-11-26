@@ -1,46 +1,51 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'data/db.dart';
 import 'domain/models.dart';
 
-class ExportSection {
-  final Section section;
-  late final Project project;
-  late final List<ScannedItem> items;
+class ExportProject {
+  final Project project;
 
-  ExportSection(this.section) {
-    project = DbConnector.getProjects()
-        .where((project) => project.id == section.projectId)
-        .first;
-    items = DbConnector.getScannedItems(section.id);
-  }
+  const ExportProject({required this.project});
 
   Map<String, dynamic> toJson() =>
-      {'project': project, 'section': section, 'items': items};
+      {'name': project.name, 'details': project.details};
 }
 
-Future<void> export(Section section) async {
-  final exportSection = ExportSection(section);
-  final encoded = jsonEncode(exportSection);
+class ExportSection {
+  final ExportProject exportProject;
+  final Section section;
 
-  final name = '${exportSection.project.name}_${section.name} by '
-      '${exportSection.section.operatorName}.json';
+  ExportSection({required project, required this.section})
+      : exportProject = ExportProject(project: project);
+
+  Map<String, dynamic> toJson() =>
+      {'project': exportProject, 'section': section};
+}
+
+Future<void> export(Project project, int sectionIndex) async {
+  final section = project.sections[sectionIndex];
+  final exportData = ExportSection(project: project, section: section);
+  final encoded = jsonEncode(exportData);
+
+  final name = '${project.name}_${section.name} by '
+      '${section.operatorName}.json';
   final tempDir = await getTemporaryDirectory();
   final file = File(join(tempDir.path, name));
   file.writeAsString(encoded);
 
   final MailOptions mailOptions = MailOptions(
-    body: '<b>Project:</b> ${exportSection.project.name}<br>'
-        '<b>Section:</b> ${exportSection.section.name}<p>'
-        'Scanned by ${exportSection.section.operatorName}<br>'
-        'Item count: ${exportSection.items.length}<p>--<p>'
+    body: '<b>Project:</b> ${project.name}<br>'
+        '<b>Section:</b> ${section.name}<p>'
+        'Scanned by ${section.operatorName}<br>'
+        'Item count: ${section.items.length}<p>--<p>'
         'Attachment file name: $name',
-    subject: 'Scan for `${exportSection.project.name}`',
+    subject: 'Scan for `${project.name}`',
     // recipients: ['example@example.com'],
     isHTML: true,
     attachments: [
@@ -48,5 +53,12 @@ Future<void> export(Section section) async {
     ],
   );
 
-  await FlutterMailer.send(mailOptions);
+  if (Platform.isAndroid) {
+    await FlutterMailer.send(mailOptions);
+  } else {
+    if (kDebugMode) {
+      print('Exported: ${mailOptions.body}');
+      print('Encoded: $encoded');
+    }
+  }
 }

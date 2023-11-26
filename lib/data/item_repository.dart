@@ -6,12 +6,12 @@ part 'item_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 ItemRepository itemRepository(ItemRepositoryRef ref) =>
-  throw UnimplementedError();
+    throw UnimplementedError();
 
 abstract class ItemRepository {
-  Future<List<Project>> getProjects();
+  Future<List<Project>> getProjects({int? id});
 
-  Future<int> addProject({required Project project});
+  Future<int> createProject({required String name, String details = ''});
 
   Future<void> updateProject({required Project project});
 
@@ -19,7 +19,11 @@ abstract class ItemRepository {
 
   Future<List<Section>> getSections({required int projectId});
 
-  Future<int> addSection({required Section section});
+  Future<int> createSection(
+      {required int projectId,
+      required String name,
+      String details,
+      required String operatorName});
 
   Future<void> updateSection({required Section section});
 
@@ -27,14 +31,19 @@ abstract class ItemRepository {
 
   Future<List<ScannedItem>> getScans({required int sectionId});
 
-  Future<int> addScan({required ScannedItem scan});
+  Future<int> addScan({required int sectionId, required ScannedItem scan});
 
-  Future<void> updateScan({required ScannedItem scan});
+  Future<void> updateScan(
+      {required int scannedItemId, required ScannedItem scan});
 
   Future<void> deleteScan({required ScannedItem scan});
 
   // settings
   Future<int> getActiveProject();
 
-  Future<void> setActiveProject({required int projectId});
+  Future<void> setActiveProject(int projectId);
+
+  Future<String> getLastOperator();
+
+  Future<void> setLastOperator(String lastOperator);
 }

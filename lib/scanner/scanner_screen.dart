@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stock_barcode_scanner/confirmation_dialog.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 
 import '../data/item_repository.dart';
@@ -23,16 +24,15 @@ Timer? _timer;
 class CurrentSection extends _$CurrentSection {
   @override
   Section build() => Section(
-        id: 0,
-        projectId: 0,
-        name: '',
-        details: '',
-        operatorName: '',
-        created: DateTime(0),
-      );
+      id: 0,
+      name: '',
+      details: '',
+      operatorName: '',
+      created: DateTime(0),
+      items: []);
 
-  void update(Section sectionId) {
-    state = sectionId;
+  void update(Section section) {
+    state = section;
   }
 }
 
@@ -41,7 +41,6 @@ class CurrentBarcode extends _$CurrentBarcode {
   @override
   ScannedItem build() => ScannedItem(
       id: 0,
-      sectionId: 0,
       barcode: '',
       created: DateTime.fromMillisecondsSinceEpoch(0),
       updated: DateTime.fromMillisecondsSinceEpoch(0),
@@ -132,12 +131,16 @@ class _Controller extends _$Controller {
   }
 
   Future<void> updateScannedItem(ScannedItem scannedItem) async {
-    await ref.read(itemRepositoryProvider).updateScan(scan: scannedItem);
+    await ref
+        .read(itemRepositoryProvider)
+        .updateScan(scannedItemId: scannedItem.id, scan: scannedItem);
     await loadScannedItems();
   }
 
-  Future<int> addScannedItem(ScannedItem scannedItem) async {
-    int id = await ref.read(itemRepositoryProvider).addScan(scan: scannedItem);
+  Future<int> addScannedItem(int sectionId, ScannedItem scannedItem) async {
+    int id = await ref
+        .read(itemRepositoryProvider)
+        .addScan(sectionId: sectionId, scan: scannedItem);
     await loadScannedItems();
     return id;
   }
@@ -187,7 +190,6 @@ class ScannerScreen extends ConsumerWidget {
 
         final newScannedItem = ScannedItem(
           id: 0,
-          sectionId: section.id,
           barcode: next,
           created: createdUpdatedDate,
           updated: createdUpdatedDate,
@@ -196,7 +198,7 @@ class ScannerScreen extends ConsumerWidget {
 
         ref
             .read(_controllerProvider.notifier)
-            .addScannedItem(newScannedItem)
+            .addScannedItem(section.id, newScannedItem)
             .then((id) => ref
                 .read(currentBarcodeProvider.notifier)
                 .update(newScannedItem.copyWith(id: id)));
@@ -348,11 +350,10 @@ class _AdjustScanCountWidget extends ConsumerWidget {
   const _AdjustScanCountWidget();
 
   void _update(WidgetRef ref, int amount) {
-    final sectionId =
-        ref.watch(currentSectionProvider.select((section) => section.id));
+    // final sectionId =
+    //     ref.watch(currentSectionProvider.select((section) => section.id));
     final currentBarcode = ref.watch(currentBarcodeProvider);
     final updatedScannedItem = currentBarcode.copyWith(
-      sectionId: sectionId,
       updated: DateTime.now(),
       count: currentBarcode.count + amount,
     );
@@ -477,11 +478,20 @@ class _ScannedItemList extends ConsumerWidget {
                           return Card(
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12.0),
-                              onTap: () {},
-                              onLongPress: () async {
-                                await ref
-                                    .read(_controllerProvider.notifier)
-                                    .deleteScannedItem(scannedItem);
+                              onTap: () async {
+                                await showConfirmationDialog(
+                                  context,
+                                  'Delete scan?',
+                                  'This will remove the scan with the count. This action cannot be undone.',
+                                  [
+                                    DialogAction('Cancel', () {}),
+                                    DialogAction('Delete', () async {
+                                      await ref
+                                          .read(_controllerProvider.notifier)
+                                          .deleteScannedItem(scannedItem);
+                                    })
+                                  ],
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),

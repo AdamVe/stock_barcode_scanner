@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../domain/model_helper.dart';
 import '../domain/models.dart';
 
 class DbConnector {
@@ -67,39 +68,50 @@ class DbConnector {
     _db.dispose();
   }
 
-  static List<Project> getProjects() {
-    final rs = _db.select('''
-      SELECT * FROM $kTableProject ORDER BY last_access_date DESC
-    ''');
-    return rs.map((row) => ProjectDbHelper.projectFromRow(row)).toList();
+  static ResultSet _getProjectEntities({int? id}) {
+    final query =
+        'SELECT * FROM $kTableProject ${(id != null) ? 'WHERE id = $id' : ''} '
+        'ORDER BY last_access_date DESC';
+    return _db.select(query);
   }
 
-  static int addProject(Project project) {
-    final date = project.created.millisecondsSinceEpoch;
+  static List<Project> getProjects({int? id}) {
+    final projects = _getProjectEntities(id: id);
+    return projects.map((row) {
+      final sections = getSections(row['id']);
+      return ProjectDbHelper.projectFromRow(row, sections);
+    }).toList(growable: false);
+  }
+
+  static int createProject(String name, String details, DateTime createDate) {
+    final date = createDate.millisecondsSinceEpoch;
     _db.execute('''
       INSERT INTO $kTableProject 
       (name, details, created_date, last_access_date) 
-      VALUES('${project.name}', '${project.details}', $date, $date)
+      VALUES('$name', '$details', $date, $date)
     ''');
     return _db.lastInsertRowId;
   }
 
-  static void updateProject(Project project) {
+  static void updateProject(
+      {required int projectId,
+      required String projectName,
+      required String projectDetails,
+      required DateTime lastAccessed}) {
     _db.execute('''
       UPDATE $kTableProject 
-      SET name = '${project.name}',
-          details = '${project.details}',
-          created_date = ${project.created.millisecondsSinceEpoch},
-          last_access_date = ${project.accessed.millisecondsSinceEpoch}
+      SET name = '$projectName',
+          details = '$projectDetails',
+          last_access_date = ${lastAccessed.millisecondsSinceEpoch}
       WHERE
-          id = ${project.id}
+          id = $projectId
     ''');
   }
 
-  static void deleteProject(Project project) {
+  static void deleteProject(int projectId) {
     _db.execute('''
       DELETE FROM $kTableProject
-      WHERE id = ${project.id}
+      WHERE id = $projectId
     ''');
   }
 
@@ -108,37 +120,47 @@ class DbConnector {
       SELECT * FROM $kTableSection where project_id = $projectId 
       ORDER BY created_date
     ''');
-    return rs.map((row) => ProjectDbHelper.sectionFromRow(row)).toList();
+    return rs.map((row) {
+      final items = getScannedItems(row['id']);
+      return ProjectDbHelper.sectionFromRow(row, items);
+    }).toList(growable: false);
   }
 
-  static int addSection(Section section) {
-    final date = section.created.millisecondsSinceEpoch;
+  static int createSection(int projectId, String name, String details,
+      String operatorName, DateTime createDate) {
+    final date = createDate.millisecondsSinceEpoch;
     _db.execute('''
       INSERT INTO $kTableSection 
       (project_id, name, details, operator_name, created_date) 
-      VALUES(${section.projectId}, '${section.name}', '${section.details}',
-        '${section.operatorName}', $date)
+      VALUES($projectId, '$name', '$details', '$operatorName', $date)
     ''');
     return _db.lastInsertRowId;
   }
 
-  static void updateSection(Section section) {
+  static void updateSection(
+      {required int sectionId,
+      required String sectionName,
+      required String sectionDetails,
+      required String operatorName}) {
     _db.execute('''
       UPDATE $kTableSection
-      SET project_id = ${section.projectId},
-          name = '${section.name}',
-          details = '${section.details}',
-          operator_name = '${section.operatorName}',
-          created_date = ${section.created.millisecondsSinceEpoch} 
+      SET name = '$sectionName',
+          details = '$sectionDetails',
+          operator_name = '$operatorName' 
       WHERE
-          id = ${section.id}
+          id = $sectionId
     ''');
   }
 
-  static void deleteSection(Section section) {
+  static void deleteSection(int sectionId) {
+    _db.execute('''
+      DELETE FROM $kTableScannedItem
+      WHERE section_id = $sectionId
+    ''');
+
     _db.execute('''
       DELETE FROM $kTableSection
-      WHERE id = ${section.id}
+      WHERE id = $sectionId
     ''');
   }
 
@@ -149,60 +171,60 @@ class DbConnector {
     return rs.map((row) => ProjectDbHelper.scannedItemFromRow(row)).toList();
   }
 
-  static int addScannedItem(ScannedItem scannedItem) {
+  static int createScannedItem(
+      int sectionId, String barcode, DateTime createDate, int count) {
+    final date = createDate.millisecondsSinceEpoch;
     _db.execute('''
       INSERT INTO $kTableScannedItem 
       (section_id, barcode, created_date, updated_date, count)
-      VALUES(${scannedItem.sectionId}, '${scannedItem.barcode}',
-       ${scannedItem.created.millisecondsSinceEpoch}, 
-       ${scannedItem.updated.millisecondsSinceEpoch}, 
-       '${scannedItem.count}')
+      VALUES($sectionId, '$barcode', $date, $date, $count)
     ''');
 
     return _db.lastInsertRowId;
   }
 
-  static void updateScannedItem(ScannedItem scannedItem) {
+  static void updateScannedItem(int scannedItemId, ScannedItem scannedItem) {
+    final updatedDate = scannedItem.updated.millisecondsSinceEpoch;
     _db.execute('''
       UPDATE $kTableScannedItem
-      SET section_id = ${scannedItem.sectionId},
-          barcode = '${scannedItem.barcode}',
-          created_date = ${scannedItem.created.millisecondsSinceEpoch},
-          updated_date = ${scannedItem.updated.millisecondsSinceEpoch},
+      SET barcode = '${scannedItem.barcode}',
+          updated_date = $updatedDate,
           count = ${scannedItem.count}
       WHERE
-          id = ${scannedItem.id}
+          id = $scannedItemId
     ''');
   }
 
-  static void deleteScannedItem(ScannedItem scannedItem) {
+  static void deleteScannedItem(int scannedItemId) {
     _db.execute('''
       DELETE FROM $kTableScannedItem
-      WHERE id = ${scannedItem.id}
+      WHERE id = $scannedItemId
     ''');
   }
 
   static int getActiveProject() {
-    final rs = _db.select('SELECT active_project_id FROM $kTableValues');
-    return rs[0]['active_project_id'];
+    final values =
+        _db.select('SELECT active_project_id FROM $kTableValues').firstOrNull;
+
+    int activeProjectId = values?['active_project_id'] ?? -1;
+
+    return activeProjectId != -1
+        ? activeProjectId
+        : _getProjectEntities().firstOrNull?['id'] ?? -1;
   }
 
   static void setActiveProject(int projectId) {
-    _db.execute('''
-      UPDATE $kTableValues
-      SET active_project_id = $projectId
-    ''');
+    _db.execute('UPDATE $kTableValues SET active_project_id = $projectId');
   }
 
-  static int getLastOperator() {
-    final rs = _db.select('SELECT last_operator_name FROM $kTableValues');
-    return rs[0]['last_operator_name'];
+  static String getLastOperator() {
+    final values =
+        _db.select('SELECT active_project_id FROM $kTableValues').firstOrNull;
+
+    return values?['last_operator_name'] ?? '';
   }
 
   static void setLastOperator(String lastOperator) {
-    _db.execute('''
-      UPDATE $kTableValues
-      SET last_operator_name = $lastOperator
-    ''');
+    _db.execute('UPDATE $kTableValues SET last_operator_name = $lastOperator');
   }
 }

@@ -61,8 +61,9 @@ class _ProjectDialogState extends State<ProjectDialog> {
                       id: widget.project?.id ?? 0,
                       name: projectNameController.text,
                       details: projectDetailsController.text,
-                      created: createdDate, // created
-                      accessed: accessedDate, // accessed
+                      created: createdDate,
+                      accessed: accessedDate,
+                      sections: [],
                     ));
                   },
             child: widget.project != null

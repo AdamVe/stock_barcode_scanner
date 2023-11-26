@@ -20,12 +20,12 @@ final projectIdProvider = NotifierProvider<ProjectId, int>.internal(
 );
 
 typedef _$ProjectId = Notifier<int>;
-String _$controllerHash() => r'7a535fab75472cae47decbcf9fd6a8dec6a0ad41';
+String _$controllerHash() => r'be8ce4641ba3f6c571cb36bba3daed8ed636e03f';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)
-final _controllerProvider = AutoDisposeAsyncNotifierProvider<_Controller,
-    List<ExportSection>?>.internal(
+final _controllerProvider =
+    AutoDisposeAsyncNotifierProvider<_Controller, Project?>.internal(
   _Controller.new,
   name: r'_controllerProvider',
   debugGetCreateSourceHash:
@@ -34,6 +34,6 @@ final _controllerProvider = AutoDisposeAsyncNotifierProvider<_Controller,
   allTransitiveDependencies: null,
 );
 
-typedef _$Controller = AutoDisposeAsyncNotifier<List<ExportSection>?>;
+typedef _$Controller = AutoDisposeAsyncNotifier<Project?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
-import '../domain/models.dart';
-
 class FirstScanDialog extends ConsumerStatefulWidget {
   final int? projectId;
 
@@ -143,32 +141,20 @@ class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
                         ElevatedButton(
                             onPressed: enabled
                                 ? () async {
-                                    final createdAccessedDate = DateTime.now();
                                     final repository =
                                         ref.read(itemRepositoryProvider);
                                     final projectId =
-                                        await repository.addProject(
-                                            project: Project(
-                                      id: 0,
-                                      name: projectNameController.text,
-                                      details: '',
-                                      created: createdAccessedDate,
-                                      accessed: createdAccessedDate,
-                                    ));
-                                    await repository.setActiveProject(
-                                        projectId: projectId);
+                                        await repository.createProject(
+                                            name: projectNameController.text);
+                                    await repository
+                                        .setActiveProject(projectId);
                                     final sectionId =
-                                        await repository.addSection(
-                                            section: Section(
-                                                id: 0,
-                                                projectId: projectId,
-                                                name: sectionIdController.text,
-                                                details:
-                                                    sectionDetailsController
-                                                        .text,
-                                                operatorName:
-                                                    operatorNameController.text,
-                                                created: DateTime.now()));
+                                        await repository.createSection(
+                                      projectId: projectId,
+                                      name: sectionIdController.text,
+                                      details: sectionDetailsController.text,
+                                      operatorName: operatorNameController.text,
+                                    );
                                     final newSection = (await repository
                                             .getSections(projectId: projectId))
                                         .where((section) =>

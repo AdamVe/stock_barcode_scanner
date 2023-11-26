@@ -16,9 +16,14 @@ enum ProjectAction { actionEditProject, actionDeleteProject }
 
 @riverpod
 class _Controller extends _$Controller {
+  Future<List<Project>> _read() async {
+    return ref.read(itemRepositoryProvider).getProjects();
+  }
+
   @override
   FutureOr<List<Project>> build() {
-    return ref.read(itemRepositoryProvider).getProjects();
+    ref.invalidate(itemRepositoryProvider);
+    return _read();
   }
 
   Future<void> updateProject(Project project) async {
@@ -27,7 +32,9 @@ class _Controller extends _$Controller {
   }
 
   Future<void> addProject(Project project) async {
-    await ref.read(itemRepositoryProvider).addProject(project: project);
+    await ref
+        .read(itemRepositoryProvider)
+        .createProject(name: project.name, details: project.details);
     await loadProjects();
   }
 
@@ -38,8 +45,7 @@ class _Controller extends _$Controller {
 
   Future<void> loadProjects() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-        () => ref.read(itemRepositoryProvider).getProjects());
+    state = await AsyncValue.guard(() => _read());
   }
 }
 
@@ -90,9 +96,7 @@ class _ProjectList extends ConsumerWidget {
           subtitle: Text(
               'Details: ${project.details}\nCreated: ${project.created.format()}'),
           onTap: () async {
-            ref
-                .read(itemRepositoryProvider)
-                .setActiveProject(projectId: project.id);
+            ref.read(itemRepositoryProvider).setActiveProject(project.id);
 
             ref
                 .read(_controllerProvider.notifier)

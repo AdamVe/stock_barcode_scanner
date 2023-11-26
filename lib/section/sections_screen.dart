@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stock_barcode_scanner/confirmation_dialog.dart';
 import 'package:stock_barcode_scanner/project/projects_screen.dart';
 import 'package:stock_barcode_scanner/section/first_scan_dialog.dart';
 
@@ -28,56 +29,43 @@ class ProjectId extends _$ProjectId {
 
 @riverpod
 class _Controller extends _$Controller {
-  Future<List<ExportSection>?> _read() async {
+  Future<Project?> _read() async {
     final repository = ref.read(itemRepositoryProvider);
     final projectId = await repository.getActiveProject();
     if (kDebugMode) {
       print('Sections for project $projectId');
     }
     ref.read(projectIdProvider.notifier).update(projectId);
-    // does project exist?
-    final projects = await repository.getProjects();
-    final projectExists =
-        projects.where((project) => project.id == projectId).isNotEmpty;
-
-    if (!projectExists) {
-      return null;
-    }
-    final sections = (await repository.getSections(projectId: projectId))
-        .map((e) => ExportSection(e))
-        .toList(growable: false);
-    sections.sort((s1, s2) {
-      if (s1.section.created == s2.section.created) {
-        return s1.items.length - s2.items.length;
-      }
-      return s2.section.created.millisecondsSinceEpoch -
-          s1.section.created.millisecondsSinceEpoch;
-    });
-    return sections;
+    final project = await repository.getProjects(id: projectId);
+    return project.firstOrNull;
   }
 
   @override
-  FutureOr<List<ExportSection>?> build() {
+  FutureOr<Project?> build() {
     ref.invalidate(itemRepositoryProvider);
     return _read();
   }
 
   Future<void> updateSection(Section section) async {
     await ref.read(itemRepositoryProvider).updateSection(section: section);
-    await loadSections();
+    await reload();
   }
 
-  Future<void> addSection(Section section) async {
-    await ref.read(itemRepositoryProvider).addSection(section: section);
-    await loadSections();
+  Future<void> createSection(int projectId, Section section) async {
+    await ref.read(itemRepositoryProvider).createSection(
+        projectId: projectId,
+        name: section.name,
+        details: section.details,
+        operatorName: section.operatorName);
+    await reload();
   }
 
   Future<void> deleteSection(Section section) async {
     await ref.read(itemRepositoryProvider).deleteSection(section: section);
-    await loadSections();
+    await reload();
   }
 
-  Future<void> loadSections() async {
+  Future<void> reload() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() => _read());
   }
@@ -114,10 +102,10 @@ class SectionsScreen extends ConsumerWidget {
               return Center(child: Text('ERROR: $e'));
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            data: (sections) => sections != null
-                ? _SectionList(sections)
+            data: (project) => project != null
+                ? _SectionList(project)
                 : FirstScanDialog(onCreate: () {
-                    ref.read(_controllerProvider.notifier).loadSections();
+                    ref.read(_controllerProvider.notifier).reload();
                   }),
           ),
         ),
@@ -131,7 +119,9 @@ class SectionsScreen extends ConsumerWidget {
                             projectId: ref.read(projectIdProvider));
                       });
                   if (section != null) {
-                    ref.read(_controllerProvider.notifier).addSection(section);
+                    ref
+                        .read(_controllerProvider.notifier)
+                        .createSection(state.value!.id, section);
                   }
                 },
                 icon: const Icon(Icons.add),
@@ -142,43 +132,55 @@ class SectionsScreen extends ConsumerWidget {
 }
 
 class _SectionList extends ConsumerWidget {
-  final List<ExportSection> sections;
+  final Project project;
 
-  const _SectionList(this.sections);
+  const _SectionList(this.project);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView.builder(
-        itemCount: sections.length,
+        itemCount: project.sections.length,
         itemBuilder: (BuildContext context, int index) {
-          final section = sections.elementAt(index);
+          final section = project.sections.elementAt(index);
           return SectionCard(
-            exportSection: section,
+            section: section,
             onScan: () {
-              ref.read(currentSectionProvider.notifier).update(section.section);
+              ref.read(currentSectionProvider.notifier).update(section);
               Navigator.pushNamed(
                 context,
                 ScannerScreen.routeName,
               ).then((value) => ref.invalidate(_controllerProvider));
             },
-            onDelete: () {
-              ref
-                  .read(_controllerProvider.notifier)
-                  .deleteSection(section.section);
+            onDelete: () async {
+              await showConfirmationDialog(
+                  context,
+                  'Delete section?',
+                  'This will delete the section and all scanned items. '
+                      'This cannot be undone.',
+                  [
+                    DialogAction('Cancel', () {}),
+                    DialogAction('Delete', () {
+                      ref
+                          .read(_controllerProvider.notifier)
+                          .deleteSection(section);
+                    })
+                  ]);
             },
             onEdit: () async {
-              final originalSection = sections.elementAt(index).section;
-              Section? section = await showAdaptiveDialog(
+              final originalSection = section;
+              Section? editedSection = await showAdaptiveDialog(
                   context: context,
                   builder: (BuildContext context) {
                     return SectionDialog(section: originalSection);
                   });
-              if (section != null) {
-                ref.read(_controllerProvider.notifier).updateSection(section);
+              if (editedSection != null) {
+                ref
+                    .read(_controllerProvider.notifier)
+                    .updateSection(editedSection);
               }
             },
             onExport: () async {
-              await export(section.section);
+              await export(project, index);
             },
           );
         });
@@ -186,14 +188,14 @@ class _SectionList extends ConsumerWidget {
 }
 
 class SectionCard extends StatelessWidget {
-  final ExportSection exportSection;
+  final Section section;
   final void Function()? onScan;
   final void Function()? onDelete;
   final void Function()? onEdit;
   final void Function()? onExport;
 
   const SectionCard({
-    required this.exportSection,
+    required this.section,
     this.onScan,
     this.onExport,
     this.onDelete,
@@ -223,7 +225,7 @@ class SectionCard extends StatelessWidget {
                     alignment: Alignment.topLeft,
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      exportSection.section.name,
+                      section.name,
                       style: Theme.of(context)
                           .textTheme
                           .displayLarge
@@ -266,30 +268,30 @@ class SectionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Description: ${exportSection.section.details}',
+                    'Description: ${section.details}',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(
                     height: 4,
                   ),
                   Text(
-                    'Operator: ${exportSection.section.operatorName}',
+                    'Operator: ${section.operatorName}',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(
                     height: 4,
                   ),
                   Text(
-                    'Scanned items: ${exportSection.items.length}',
+                    'Scanned items: ${section.items.length}',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(
                     height: 4,
                   ),
                   Text(
-                    exportSection.items.isEmpty
+                    section.items.isEmpty
                         ? ''
-                        : 'Latest update: ${exportSection.items[0].created.format()}',
+                        : 'Latest update: ${section.items[0].created.format()}',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                 ],
