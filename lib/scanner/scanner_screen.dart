@@ -9,16 +9,15 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/confirmation_dialog.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
+import 'package:stock_barcode_scanner/scanner/scanner_widget.dart';
+import 'package:stock_barcode_scanner/scanner/scanner_widget_overlay.dart';
 
 import '../data/item_repository.dart';
 import '../domain/models.dart';
 
 part 'scanner_screen.g.dart';
 
-const _strokeWidth = 3.0;
 const _scannedItemListHeight = 250.0;
-
-Timer? _timer;
 
 @Riverpod(keepAlive: true)
 class CurrentSection extends _$CurrentSection {
@@ -156,19 +155,22 @@ class _Controller extends _$Controller {
   }
 }
 
-class ScannerScreen extends ConsumerWidget {
+class ScannerScreen extends ConsumerStatefulWidget {
   static const routeName = '/scanner';
 
   const ScannerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ScannerScreen> createState() => _ScannerScreenState();
+}
+
+class _ScannerScreenState extends ConsumerState<ScannerScreen> {
+  Timer? _timer;
+
+  @override
+  Widget build(BuildContext context) {
     final scanSound = ref.watch(scanSoundProvider);
     final section = ref.watch(currentSectionProvider);
-    var controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      detectionTimeoutMs: 350,
-    );
 
     ref.listen(detectedBarcodeProvider, (previous, next) async {
       if (next.isEmpty) {
@@ -229,20 +231,12 @@ class ScannerScreen extends ConsumerWidget {
                     (BuildContext context, BoxConstraints constraints) {
                   final scanRect =
                       _getScanRect(constraints.maxWidth, constraints.maxHeight);
-                  final path = _getOverlayCutOutPath(scanRect);
-                  final fgPath = _getOverlayCutOutForegroundPath(scanRect);
-
                   return Stack(children: [
-                    MobileScanner(
-                      controller: controller,
-                      overlay: _MobileScannerOverlay(
-                        background: _OverlayBackground(path),
-                        foreground: _OverlayForeground(
-                          fgPath,
-                        ),
+                    ScannerWidget(
+                      overlay: ScannerWidgetOverlay(
+                        scanWindow: scanRect,
                         color: Colors.black.withOpacity(0.8),
                       ),
-                      scanWindow: scanRect,
                       onDetect: (capture) async {
                         final currentBarcode = capture.barcodes
                                 .where((element) =>
@@ -299,50 +293,10 @@ class ScannerScreen extends ConsumerWidget {
         center: center, width: scanWinWidth, height: scanWinHeight);
   }
 
-  Path _getOverlayCutOutPath(Rect rect) {
-    return Path()..addRRect(RRect.fromRectXY(rect, 0, 0));
-  }
-
-  Path _getOverlayCutOutForegroundPath(Rect rect) {
-    const strokeWidth_2 = _strokeWidth / 2;
-
-    final x1 = rect.center.dx - rect.width / 2;
-    final y1 = rect.center.dy - rect.height / 2;
-    final x2 = rect.center.dx + rect.width / 2;
-    final y2 = rect.center.dy + rect.height / 2;
-    return Path()
-      ..addPolygon([
-        Offset(x1 - strokeWidth_2, y1 - 5),
-        Offset(x1 - strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y1 - strokeWidth_2),
-        Offset(x1 + 20, y1 - strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + strokeWidth_2, y2 - 20),
-        Offset(x2 + strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y2 + strokeWidth_2),
-        Offset(x2 + 5, y2 + strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - strokeWidth_2, y2 - 20),
-        Offset(x1 - strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y2 + strokeWidth_2),
-        Offset(x1 + 20, y2 + strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + strokeWidth_2, y1 - 5),
-        Offset(x2 + strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y1 - strokeWidth_2),
-        Offset(x2 + 5, y1 - strokeWidth_2)
-      ], false);
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }
 
@@ -553,198 +507,5 @@ class _ScannedItemList extends ConsumerWidget {
                 ],
               ));
     });
-  }
-}
-
-class _PathPainter extends StatelessWidget {
-  final Path path;
-  final Paint pathPaint;
-
-  const _PathPainter({required this.path, required this.pathPaint});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _ShapePainter(path: path, pathPaint: pathPaint),
-    );
-  }
-}
-
-class _ShapePainter extends CustomPainter {
-  final Path path;
-  final Paint pathPaint;
-
-  const _ShapePainter({required this.path, required this.pathPaint}) : super();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPath(path, pathPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _BarcodeDetectionIcon extends ConsumerWidget {
-  const _BarcodeDetectionIcon();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final seeBarcode = ref.watch(detectedBarcodeProvider) != '';
-
-    final detectionColor = seeBarcode
-        ? Colors.green.withOpacity(1)
-        : Colors.white.withOpacity(0.3);
-
-    return Icon(
-      Icons.remove_red_eye_outlined,
-      size: 32,
-      color: detectionColor,
-    );
-  }
-}
-
-class _OverlayForeground extends ConsumerWidget {
-  final Path path;
-
-  const _OverlayForeground(this.path);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rect = path.getBounds();
-
-    return Stack(
-      children: [
-        _PathPainter(
-          path: path,
-          pathPaint: Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = _strokeWidth
-            ..strokeCap = StrokeCap.round
-            ..color = Colors.white.withOpacity(0.3),
-        ),
-        Positioned(
-          left: rect.left,
-          top: rect.top - 32,
-          child: const _BarcodeDetectionIcon(),
-        ),
-      ],
-    );
-  }
-}
-
-class _OverlayBackground extends StatelessWidget {
-  final Path path;
-
-  const _OverlayBackground(this.path);
-
-  @override
-  Widget build(BuildContext context) {
-    return _PathPainter(
-      path: path,
-      pathPaint: Paint()..color = Colors.black,
-    );
-  }
-}
-
-class _MobileScannerOverlay extends ConsumerStatefulWidget {
-  final Widget background;
-  final Widget? foreground;
-  final Color color;
-
-  const _MobileScannerOverlay({
-    required this.background,
-    this.foreground,
-    required this.color,
-  });
-
-  @override
-  ConsumerState<_MobileScannerOverlay> createState() =>
-      _MobileScannerOverlayState();
-}
-
-class _MobileScannerOverlayState extends ConsumerState<_MobileScannerOverlay>
-    with SingleTickerProviderStateMixin {
-  late Animation<Color?> _colorAnimation;
-  late AnimationController _controller;
-
-  bool _showDuplicate = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final duplicateSoundPlayer = ref.watch(duplicateSoundProvider);
-    ref.listen(duplicateProvider, (previous, next) async {
-      if (next == true) {
-        TickerFuture tickerFuture = _controller.repeat();
-        tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
-          _controller.forward(from: 0);
-          _controller.stop(canceled: true);
-          setState(() {
-            _showDuplicate = false;
-            if (kDebugMode) {
-              print('Clearing duplicate scan notification');
-            }
-            ref.read(duplicateProvider.notifier).update(false);
-          });
-        });
-
-        setState(() {
-          _showDuplicate = true;
-        });
-
-        duplicateSoundPlayer.resume();
-        int count = 4;
-        Timer.periodic(const Duration(milliseconds: 100), (timer) {
-          HapticFeedback.lightImpact();
-          count--;
-          if (count == 0) {
-            timer.cancel();
-          }
-        });
-      }
-    });
-
-    return Stack(fit: StackFit.expand, children: [
-      ColorFiltered(
-        colorFilter: ColorFilter.mode(
-            _showDuplicate ? _colorAnimation.value! : widget.color,
-            BlendMode.srcOut),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                  color: widget.color, backgroundBlendMode: BlendMode.dstOut),
-            ),
-            widget.background
-          ],
-        ),
-      ),
-      if (widget.foreground != null) widget.foreground!
-    ]);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-        duration: const Duration(milliseconds: 100), vsync: this);
-
-    _colorAnimation =
-        ColorTween(begin: Colors.white.withOpacity(0.3), end: widget.color)
-            .animate(_controller)
-          ..addListener(() {
-            setState(() {
-              // redraws the widget
-            });
-          });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
-    _timer?.cancel();
   }
 }
