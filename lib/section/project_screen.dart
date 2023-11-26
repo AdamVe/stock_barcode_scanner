@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/confirmation_dialog.dart';
-import 'package:stock_barcode_scanner/project/projects_screen.dart';
+import 'package:stock_barcode_scanner/project/project_manager_screen.dart';
 import 'package:stock_barcode_scanner/section/welcome_dialog.dart';
 
 import '../data/item_repository.dart';
@@ -93,7 +93,7 @@ class ProjectScreen extends ConsumerWidget {
                 tooltip: 'Manage projects',
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(
-                      context, ProjectsScreen.routeName, (route) => false);
+                      context, ProjectManagerScreen.routeName, (route) => false);
                 },
               ),
           ],

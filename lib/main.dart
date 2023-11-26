@@ -6,7 +6,7 @@ import 'package:stock_barcode_scanner/section/project_screen.dart';
 import 'package:stock_barcode_scanner/data/sqlite_item_repository.dart';
 
 import 'data/db.dart';
-import 'project/projects_screen.dart';
+import 'project/project_manager_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +41,7 @@ class StockBarcodeScannerApp extends StatelessWidget {
       initialRoute: ProjectScreen.routeName,
       routes: {
         ProjectScreen.routeName: (context) => const ProjectScreen(),
-        ProjectsScreen.routeName: (context) => const ProjectsScreen(),
+        ProjectManagerScreen.routeName: (context) => const ProjectManagerScreen(),
         ScannerScreen.routeName: (context) => const ScannerScreen()
       },
     );

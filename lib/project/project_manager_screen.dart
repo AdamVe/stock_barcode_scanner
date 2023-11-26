@@ -10,9 +10,9 @@ import 'package:stock_barcode_scanner/section/project_screen.dart';
 
 import '../domain/models.dart';
 
-part 'projects_screen.g.dart';
+part 'project_manager_screen.g.dart';
 
-enum ProjectAction { actionEditProject, actionDeleteProject }
+enum ProjectManagerAction { actionEditProject, actionDeleteProject }
 
 @riverpod
 class _Controller extends _$Controller {
@@ -49,70 +49,12 @@ class _Controller extends _$Controller {
   }
 }
 
-class _ProjectList extends ConsumerWidget {
-  final List<Project> projects;
+/// Project Manager screen shows all existing project and allows adding,
+/// removing and editing projects.
+class ProjectManagerScreen extends ConsumerWidget {
+  const ProjectManagerScreen({super.key});
 
-  const _ProjectList(this.projects);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => ListView.builder(
-      itemCount: projects.length,
-      itemBuilder: (BuildContext context, int index) {
-        final project = projects.elementAt(index);
-        return ListTile(
-          leading: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.insert_drive_file_outlined),
-            ],
-          ),
-          trailing: PopupMenuButton<ProjectAction>(
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<ProjectAction>(
-                  value: ProjectAction.actionEditProject, child: Text('Edit')),
-              const PopupMenuItem<ProjectAction>(
-                  value: ProjectAction.actionDeleteProject,
-                  child: Text('Delete'))
-            ],
-            onSelected: (ProjectAction projectAction) async {
-              if (projectAction == ProjectAction.actionDeleteProject) {
-                ref.read(_controllerProvider.notifier).deleteProject(project);
-              } else if (projectAction == ProjectAction.actionEditProject) {
-                final updatedProject = await showAdaptiveDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return ProjectDialog(project: project);
-                    });
-                if (updatedProject != null) {
-                  ref
-                      .read(_controllerProvider.notifier)
-                      .updateProject(updatedProject);
-                }
-              }
-            },
-          ),
-          title: Text(project.name),
-          isThreeLine: true,
-          subtitle: Text(
-              'Details: ${project.details}\nCreated: ${project.created.format()}'),
-          onTap: () async {
-            ref.read(itemRepositoryProvider).setActiveProject(project.id);
-
-            ref
-                .read(_controllerProvider.notifier)
-                .updateProject(project.copyWith(accessed: DateTime.now()));
-
-            Navigator.pushNamedAndRemoveUntil(
-                context, ProjectScreen.routeName, (route) => false);
-          },
-        );
-      });
-}
-
-class ProjectsScreen extends ConsumerWidget {
-  const ProjectsScreen({super.key});
-
-  static const routeName = '/projects';
+  static const routeName = '/projectManager';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -144,4 +86,66 @@ class ProjectsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _ProjectList extends ConsumerWidget {
+  final List<Project> projects;
+
+  const _ProjectList(this.projects);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ListView.builder(
+      itemCount: projects.length,
+      itemBuilder: (BuildContext context, int index) {
+        final project = projects.elementAt(index);
+        return ListTile(
+          leading: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.insert_drive_file_outlined),
+            ],
+          ),
+          trailing: PopupMenuButton<ProjectManagerAction>(
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem<ProjectManagerAction>(
+                  value: ProjectManagerAction.actionEditProject,
+                  child: Text('Edit')),
+              const PopupMenuItem<ProjectManagerAction>(
+                  value: ProjectManagerAction.actionDeleteProject,
+                  child: Text('Delete'))
+            ],
+            onSelected: (ProjectManagerAction projectAction) async {
+              if (projectAction == ProjectManagerAction.actionDeleteProject) {
+                ref.read(_controllerProvider.notifier).deleteProject(project);
+              } else if (projectAction ==
+                  ProjectManagerAction.actionEditProject) {
+                final updatedProject = await showAdaptiveDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return ProjectDialog(project: project);
+                    });
+                if (updatedProject != null) {
+                  ref
+                      .read(_controllerProvider.notifier)
+                      .updateProject(updatedProject);
+                }
+              }
+            },
+          ),
+          title: Text(project.name),
+          isThreeLine: true,
+          subtitle: Text(
+              'Details: ${project.details}\nCreated: ${project.created.format()}'),
+          onTap: () async {
+            ref.read(itemRepositoryProvider).setActiveProject(project.id);
+
+            ref
+                .read(_controllerProvider.notifier)
+                .updateProject(project.copyWith(accessed: DateTime.now()));
+
+            Navigator.pushNamedAndRemoveUntil(
+                context, ProjectScreen.routeName, (route) => false);
+          },
+        );
+      });
 }

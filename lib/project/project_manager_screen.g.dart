@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'projects_screen.dart';
+part of 'project_manager_screen.dart';
 
 // **************************************************************************
 // RiverpodGenerator
