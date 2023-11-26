@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sections_screen.dart';
+part of 'project_screen.dart';
 
 // **************************************************************************
 // RiverpodGenerator

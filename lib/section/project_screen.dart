@@ -13,9 +13,9 @@ import '../export.dart';
 import '../scanner/scanner_screen.dart';
 import 'section_dialog.dart';
 
-part 'sections_screen.g.dart';
+part 'project_screen.g.dart';
 
-enum _SectionAction { actionEditSection, actionDeleteSection }
+enum _ProjectScreenAction { actionEditSection, actionDeleteSection }
 
 @Riverpod(keepAlive: true)
 class ProjectId extends _$ProjectId {
@@ -71,10 +71,13 @@ class _Controller extends _$Controller {
   }
 }
 
-class SectionsScreen extends ConsumerWidget {
-  const SectionsScreen({super.key});
+/// Project screen shows project information,
+/// project sections and has actions for adding, updating and removing sections,
+/// as well as exporting.
+class ProjectScreen extends ConsumerWidget {
+  const ProjectScreen({super.key});
 
-  static const String routeName = '/sections';
+  static const String routeName = '/projectScreen';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -131,6 +134,7 @@ class SectionsScreen extends ConsumerWidget {
   }
 }
 
+/// Shows list of sections in the [project]
 class _SectionList extends ConsumerWidget {
   final Project project;
 
@@ -142,7 +146,7 @@ class _SectionList extends ConsumerWidget {
         itemCount: project.sections.length,
         itemBuilder: (BuildContext context, int index) {
           final section = project.sections.elementAt(index);
-          return SectionCard(
+          return _SectionCard(
             section: section,
             onScan: () {
               ref.read(currentSectionProvider.notifier).update(section);
@@ -187,20 +191,20 @@ class _SectionList extends ConsumerWidget {
   }
 }
 
-class SectionCard extends StatelessWidget {
+/// Information about section wrapped in Material Card widget
+class _SectionCard extends StatelessWidget {
   final Section section;
   final void Function()? onScan;
   final void Function()? onDelete;
   final void Function()? onEdit;
   final void Function()? onExport;
 
-  const SectionCard({
+  const _SectionCard({
     required this.section,
     this.onScan,
     this.onExport,
     this.onDelete,
     this.onEdit,
-    super.key,
   });
 
   @override
@@ -238,20 +242,20 @@ class SectionCard extends StatelessWidget {
                     IconButton(
                         onPressed: () async => onExport?.call(),
                         icon: const Icon(Icons.ios_share)),
-                    PopupMenuButton<_SectionAction>(
+                    PopupMenuButton<_ProjectScreenAction>(
                       itemBuilder: (BuildContext context) => [
-                        const PopupMenuItem<_SectionAction>(
-                            value: _SectionAction.actionEditSection,
+                        const PopupMenuItem<_ProjectScreenAction>(
+                            value: _ProjectScreenAction.actionEditSection,
                             child: Text('Edit')),
-                        const PopupMenuItem<_SectionAction>(
-                            value: _SectionAction.actionDeleteSection,
+                        const PopupMenuItem<_ProjectScreenAction>(
+                            value: _ProjectScreenAction.actionDeleteSection,
                             child: Text('Delete'))
                       ],
-                      onSelected: (_SectionAction sectionAction) async {
+                      onSelected: (_ProjectScreenAction sectionAction) async {
                         switch (sectionAction) {
-                          case _SectionAction.actionEditSection:
+                          case _ProjectScreenAction.actionEditSection:
                             onEdit?.call();
-                          case _SectionAction.actionDeleteSection:
+                          case _ProjectScreenAction.actionDeleteSection:
                             onDelete?.call();
                           default:
                         }

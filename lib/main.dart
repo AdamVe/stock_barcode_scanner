@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
-import 'package:stock_barcode_scanner/section/sections_screen.dart';
+import 'package:stock_barcode_scanner/section/project_screen.dart';
 import 'package:stock_barcode_scanner/data/sqlite_item_repository.dart';
 
 import 'data/db.dart';
@@ -38,9 +38,9 @@ class StockBarcodeScannerApp extends StatelessWidget {
             seedColor: seedColor, brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      initialRoute: SectionsScreen.routeName,
+      initialRoute: ProjectScreen.routeName,
       routes: {
-        SectionsScreen.routeName: (context) => const SectionsScreen(),
+        ProjectScreen.routeName: (context) => const ProjectScreen(),
         ProjectsScreen.routeName: (context) => const ProjectsScreen(),
         ScannerScreen.routeName: (context) => const ScannerScreen()
       },

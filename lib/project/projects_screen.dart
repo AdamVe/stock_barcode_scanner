@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/project/project_dialog.dart';
-import 'package:stock_barcode_scanner/section/sections_screen.dart';
+import 'package:stock_barcode_scanner/section/project_screen.dart';
 
 import '../domain/models.dart';
 
@@ -103,7 +103,7 @@ class _ProjectList extends ConsumerWidget {
                 .updateProject(project.copyWith(accessed: DateTime.now()));
 
             Navigator.pushNamedAndRemoveUntil(
-                context, SectionsScreen.routeName, (route) => false);
+                context, ProjectScreen.routeName, (route) => false);
           },
         );
       });
