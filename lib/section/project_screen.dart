@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/confirmation_dialog.dart';
 import 'package:stock_barcode_scanner/project/projects_screen.dart';
-import 'package:stock_barcode_scanner/section/first_scan_dialog.dart';
+import 'package:stock_barcode_scanner/section/welcome_dialog.dart';
 
 import '../data/item_repository.dart';
 import '../date_time_ext.dart';
@@ -107,7 +107,7 @@ class ProjectScreen extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             data: (project) => project != null
                 ? _SectionList(project)
-                : FirstScanDialog(onCreate: () {
+                : WelcomeDialog(onCreate: () {
                     ref.read(_controllerProvider.notifier).reload();
                   }),
           ),

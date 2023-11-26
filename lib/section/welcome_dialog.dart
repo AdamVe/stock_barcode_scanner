@@ -3,18 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
-class FirstScanDialog extends ConsumerStatefulWidget {
+/// Welcome Dialog is shown when there is no existing project to quickly
+/// add a first project and section.
+class WelcomeDialog extends ConsumerStatefulWidget {
   final int? projectId;
 
   final void Function() onCreate;
 
-  const FirstScanDialog({super.key, this.projectId, required this.onCreate});
+  const WelcomeDialog({super.key, this.projectId, required this.onCreate});
 
   @override
-  ConsumerState<FirstScanDialog> createState() => _FirstScanDialogState();
+  ConsumerState<WelcomeDialog> createState() => _WelcomeDialogState();
 }
 
-class _FirstScanDialogState extends ConsumerState<FirstScanDialog> {
+class _WelcomeDialogState extends ConsumerState<WelcomeDialog> {
   final projectNameController = TextEditingController();
   final sectionIdController = TextEditingController();
   final sectionDetailsController = TextEditingController();
