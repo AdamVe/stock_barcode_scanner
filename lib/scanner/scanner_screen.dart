@@ -11,6 +11,7 @@ import 'package:stock_barcode_scanner/confirmation_dialog.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_widget.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_widget_overlay.dart';
+import 'package:stock_barcode_scanner/theme.dart';
 
 import '../data/item_repository.dart';
 import '../domain/models.dart';
@@ -218,9 +219,12 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     });
 
     return Theme(
-      data: ThemeData.dark(useMaterial3: true),
+      data: ref.read(themeDataProvider(Brightness.dark)),
       child: Scaffold(
-        appBar: AppBar(title: Text('Section: ${section.name}')),
+        appBar: AppBar(
+          title: Text('Section: ${section.name}'),
+          forceMaterialTransparency: true,
+        ),
         body: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,

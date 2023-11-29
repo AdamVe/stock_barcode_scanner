@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stock_barcode_scanner/theme.dart';
 
 import 'data/db.dart';
 import 'data/item_repository.dart';
@@ -19,25 +20,16 @@ void main() async {
   ));
 }
 
-class StockBarcodeScannerApp extends StatelessWidget {
+class StockBarcodeScannerApp extends ConsumerWidget {
   const StockBarcodeScannerApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const seedColor = Color.fromARGB(255, 17, 111, 7);
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'Stock Barcode Scanner',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: seedColor, brightness: Brightness.light),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-            seedColor: seedColor, brightness: Brightness.dark),
-        useMaterial3: true,
-      ),
+      theme: ref.read(themeDataProvider(Brightness.light)),
+      darkTheme: ref.read(themeDataProvider(Brightness.dark)),
       initialRoute: ProjectScreen.routeName,
       routes: {
         ProjectScreen.routeName: (context) => const ProjectScreen(),
