@@ -10,7 +10,7 @@ class _MobileScannerWidget extends StatelessWidget {
   final Function(BarcodeCapture) onDetect;
 
   const _MobileScannerWidget(
-      {super.key, required this.overlay, required this.onDetect});
+      {required this.overlay, required this.onDetect});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class _DesktopScannerWidget extends StatefulWidget {
   final Function(BarcodeCapture) onDetect;
 
   const _DesktopScannerWidget(
-      {super.key, required this.overlay, required this.onDetect});
+      {required this.overlay, required this.onDetect});
 
   @override
   State<_DesktopScannerWidget> createState() => _DesktopScannerWidgetState();
