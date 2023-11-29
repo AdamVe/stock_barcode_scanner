@@ -233,10 +233,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                       _getScanRect(constraints.maxWidth, constraints.maxHeight);
                   return Stack(children: [
                     ScannerWidget(
-                      overlay: ScannerWidgetOverlay(
-                        scanWindow: scanRect,
-                        color: Colors.black.withOpacity(0.8),
-                      ),
+                      overlay: ScannerWidgetOverlay(scanWindow: scanRect),
                       onDetect: (capture) async {
                         final currentBarcode = capture.barcodes
                                 .where((element) =>
