@@ -44,11 +44,12 @@ class DbConnector {
       
       CREATE TABLE IF NOT EXISTS $kTableValues (
         active_project_id INTEGER NOT NULL,
-        last_operator_name TEXT NOT NULL
+        last_operator_name TEXT NOT NULL,
+        last_recipient_name TEXT NOT_NULL
       );
       
-      INSERT INTO $kTableValues (active_project_id, last_operator_name)
-      SELECT -1, ''
+      INSERT INTO $kTableValues (active_project_id, last_operator_name, last_recipient_name)
+      SELECT -1, '', ''
       WHERE NOT EXISTS (SELECT 1 FROM $kTableValues);
     ''');
     } catch (e) {
@@ -219,12 +220,24 @@ class DbConnector {
 
   static String getLastOperator() {
     final values =
-        _db.select('SELECT active_project_id FROM $kTableValues').firstOrNull;
+        _db.select('SELECT last_operator_name FROM $kTableValues').firstOrNull;
 
     return values?['last_operator_name'] ?? '';
   }
 
   static void setLastOperator(String lastOperator) {
     _db.execute('UPDATE $kTableValues SET last_operator_name = $lastOperator');
+  }
+
+  static String getLastRecipient() {
+    final values =
+        _db.select('SELECT last_recipient_name FROM $kTableValues').firstOrNull;
+
+    return values?['last_recipient_name'] ?? '';
+  }
+
+  static void setLastRecipient(String lastRecipient) {
+    _db.execute(
+        'UPDATE $kTableValues SET last_recipient_name = \'$lastRecipient\'');
   }
 }

@@ -86,4 +86,11 @@ class SqliteItemRepository extends ItemRepository {
   @override
   Future<void> setLastOperator(String lastOperator) async =>
       DbConnector.setLastOperator(lastOperator);
+
+  @override
+  Future<String> getLastRecipient() async => DbConnector.getLastRecipient();
+
+  @override
+  Future<void> setLastRecipient(String lastRecipient) async =>
+      DbConnector.setLastRecipient(lastRecipient);
 }

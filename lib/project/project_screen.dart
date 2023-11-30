@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stock_barcode_scanner/confirmation_dialog.dart';
-import 'package:stock_barcode_scanner/project_manager/project_manager_screen.dart';
-import 'package:stock_barcode_scanner/project/welcome_dialog.dart';
 
+import '../confirmation_dialog.dart';
 import '../data/item_repository.dart';
 import '../date_time_ext.dart';
 import '../domain/models.dart';
-import '../export.dart';
+import '../export/export.dart';
+import '../project/welcome_dialog.dart';
+import '../project_manager/project_manager_screen.dart';
 import '../scanner/scanner_screen.dart';
 import 'section_dialog.dart';
 
@@ -184,7 +184,7 @@ class _SectionList extends ConsumerWidget {
               }
             },
             onExport: () async {
-              await export(project, index);
+              await export(ref, context, project, index);
             },
           );
         });

@@ -46,4 +46,8 @@ abstract class ItemRepository {
   Future<String> getLastOperator();
 
   Future<void> setLastOperator(String lastOperator);
+
+  Future<String> getLastRecipient();
+
+  Future<void> setLastRecipient(String lastRecipient);
 }
