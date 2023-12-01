@@ -61,15 +61,27 @@ Future<void> export(WidgetRef ref, BuildContext context, Project project,
   final file = File(join(tempDir.path, name));
   file.writeAsString(encoded);
 
+  String itemsTable = '';
+  for (var element in section.items) {
+    itemsTable += '${element.barcode}  /  ${element.count} / '
+        '${section.name} / ${section.operatorName} / '
+        '${element.updated.toLocal()} / id:${element.id}\n';
+  }
+
+  String body = 'Project: ${project.name}\n'
+      'Section: ${section.name}\n'
+      'Operated by: ${section.operatorName}\n'
+      'Item count: ${section.items.length}\n'
+      'Attachment file name: $name\n'
+      '\n'
+      'Data:\n'
+      '$itemsTable\n';
+
   final MailOptions mailOptions = MailOptions(
-    body: '<b>Project:</b> ${project.name}<br>'
-        '<b>Section:</b> ${section.name}<p>'
-        'Scanned by ${section.operatorName}<br>'
-        'Item count: ${section.items.length}<p>--<p>'
-        'Attachment file name: $name',
+    body: body,
     subject: 'Scan for `${project.name}`',
     recipients: [recipient],
-    isHTML: true,
+    isHTML: false,
     attachments: [
       file.path,
     ],
