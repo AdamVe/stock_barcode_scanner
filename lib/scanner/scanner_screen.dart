@@ -435,18 +435,19 @@ class _ScannedItemList extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12.0),
                               onTap: () async {
                                 await showConfirmationDialog(
-                                  context,
-                                  'Delete scan?',
-                                  'This will remove the scan with the count. This action cannot be undone.',
-                                  [
-                                    DialogAction('Cancel', () {}),
-                                    DialogAction('Delete', () async {
-                                      await ref
-                                          .read(_controllerProvider.notifier)
-                                          .deleteScannedItem(scannedItem);
-                                    })
-                                  ],
-                                );
+                                    context,
+                                    'Delete scan?',
+                                    'This will remove the scan with the count. This action cannot be undone.',
+                                    actions: [
+                                      DialogAction('Cancel', () {}),
+                                      DialogAction('Delete', () async {
+                                        await ref
+                                            .read(_controllerProvider.notifier)
+                                            .deleteScannedItem(scannedItem);
+                                      })
+                                    ],
+                                    icon: const Icon(
+                                        Icons.delete_outline_outlined));
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),

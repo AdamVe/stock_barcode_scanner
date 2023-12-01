@@ -157,18 +157,20 @@ class _SectionList extends ConsumerWidget {
             },
             onDelete: () async {
               await showConfirmationDialog(
-                  context,
-                  'Delete section?',
-                  'This will delete the section and all scanned items. '
-                      'This cannot be undone.',
-                  [
-                    DialogAction('Cancel', () {}),
-                    DialogAction('Delete', () {
-                      ref
-                          .read(_controllerProvider.notifier)
-                          .deleteSection(section);
-                    })
-                  ]);
+                context,
+                'Delete section?',
+                'This will delete the section and all scanned items. '
+                    'This cannot be undone.',
+                actions: [
+                  DialogAction('Cancel', () {}),
+                  DialogAction('Delete', () {
+                    ref
+                        .read(_controllerProvider.notifier)
+                        .deleteSection(section);
+                  })
+                ],
+                icon: const Icon(Icons.delete_outline_outlined),
+              );
             },
             onEdit: () async {
               final originalSection = section;

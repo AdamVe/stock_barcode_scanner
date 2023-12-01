@@ -8,13 +8,18 @@ class DialogAction {
   DialogAction(this.name, this.action, [this.id]);
 }
 
-Future<void> showConfirmationDialog(BuildContext context, String title,
-    String message, List<DialogAction>? actions) async {
+Future<void> showConfirmationDialog(
+  BuildContext context,
+  String title,
+  String message, {
+  List<DialogAction>? actions,
+  Icon? icon,
+}) async {
   return await showAdaptiveDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-            icon: const Icon(Icons.delete_outline_outlined),
+            icon: icon,
             title: Text(title),
             content: Text(message),
             actions: actions

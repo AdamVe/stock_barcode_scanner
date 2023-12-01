@@ -7,6 +7,7 @@ import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
 import 'package:stock_barcode_scanner/project/project_screen.dart';
 
+import '../confirmation_dialog.dart';
 import '../domain/models.dart';
 import 'project_dialog.dart';
 
@@ -116,7 +117,21 @@ class _ProjectList extends ConsumerWidget {
             ],
             onSelected: (ProjectManagerAction projectAction) async {
               if (projectAction == ProjectManagerAction.actionDeleteProject) {
-                ref.read(_controllerProvider.notifier).deleteProject(project);
+                await showConfirmationDialog(
+                  context,
+                  'Delete project?',
+                  'This will delete the project, all its sections and scanned '
+                      'items. This cannot be undone.',
+                  actions: [
+                    DialogAction('Cancel', () {}),
+                    DialogAction('Delete', () {
+                      ref
+                          .read(_controllerProvider.notifier)
+                          .deleteProject(project);
+                    })
+                  ],
+                  icon: const Icon(Icons.delete_outline_outlined),
+                );
               } else if (projectAction ==
                   ProjectManagerAction.actionEditProject) {
                 final updatedProject = await showAdaptiveDialog(
