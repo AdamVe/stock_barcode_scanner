@@ -40,6 +40,10 @@ Future<void> export(WidgetRef ref, BuildContext context, Project project,
   final repository = ref.read(itemRepositoryProvider);
   final lastRecipient = await repository.getLastRecipient();
 
+  if (!context.mounted) {
+    return;
+  }
+
   final recipient = await showAdaptiveDialog(
       context: context,
       builder: (BuildContext context) {
@@ -114,11 +118,11 @@ class _ExportInfoSection extends StatelessWidget {
 }
 
 class _ExportDialog extends ConsumerStatefulWidget {
-  final Project project;
-  final Section section;
-  final String lastRecipient;
+  final Project _project;
+  final Section _section;
+  final String _recipient;
 
-  const _ExportDialog(this.project, this.section, this.lastRecipient);
+  const _ExportDialog(this._project, this._section, this._recipient);
 
   @override
   ConsumerState<_ExportDialog> createState() => _ExportDialogState();
@@ -151,42 +155,45 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
         ),
         body: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              InputDecorator(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Scan information',
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _ExportInfoSection('Project', widget.project.name),
-                    _ExportInfoSection('Section', widget.section.name),
-                    _ExportInfoSection('Operator', widget.section.operatorName),
-                    _ExportInfoSection(
-                        'Items scanned', '${widget.section.items.length}'),
-                  ],
-                ),
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              TextField(
-                  controller: _controller,
-                  onChanged: (newValue) {
-                    setState(() {
-                      _exportEnabled = _controller.text.isNotEmpty;
-                    });
-                  },
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InputDecorator(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    labelText: 'Recipient',
-                  )),
-            ],
+                    labelText: 'Scan information',
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _ExportInfoSection('Project', widget._project.name),
+                      _ExportInfoSection('Section', widget._section.name),
+                      _ExportInfoSection(
+                          'Operator', widget._section.operatorName),
+                      _ExportInfoSection(
+                          'Items scanned', '${widget._section.items.length}'),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                TextField(
+                    controller: _controller,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _exportEnabled = _controller.text.isNotEmpty;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Recipient',
+                    )),
+              ],
+            ),
           ),
         ),
       ),
@@ -196,7 +203,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.lastRecipient);
+    _controller = TextEditingController(text: widget._recipient);
     _exportEnabled = _controller.text.isNotEmpty;
   }
 
