@@ -31,6 +31,38 @@ class ExportSection {
       {'project': exportProject, 'section': section};
 }
 
+Future<String> exportAsJson(ExportSection exportData) async {
+  final encoded = jsonEncode(exportData);
+  final name =
+      '${exportData.exportProject.project.name}_${exportData.section.name}_'
+      '${exportData.section.operatorName}.json';
+  final tempDir = await getTemporaryDirectory();
+  final file = File(join(tempDir.path, name));
+  file.writeAsString(encoded, flush: true);
+  return file.path;
+}
+
+Future<String> exportAsCsv(ExportSection exportData) async {
+  final name =
+      '${exportData.exportProject.project.name}_${exportData.section.name}_'
+      '${exportData.section.operatorName}.csv';
+  final tempDir = await getTemporaryDirectory();
+  final file = File(join(tempDir.path, name));
+
+  String csvData =
+      'Barcode,Name,Description,Quantity,Operator,Area,Notes,Date\n';
+  for (var scannedItem in exportData.section.items) {
+    csvData += '"${scannedItem.barcode}",'
+        '"","","${scannedItem.count}",'
+        '"${exportData.section.operatorName}",'
+        '"${exportData.section.name}", "",'
+        '"${scannedItem.updated.toLocal()}"\n';
+  }
+  file.writeAsString(csvData, flush: true);
+
+  return file.path;
+}
+
 Future<void> export(WidgetRef ref, BuildContext context, Project project,
     int sectionIndex) async {
   final section = project.sections[sectionIndex];
@@ -55,12 +87,6 @@ Future<void> export(WidgetRef ref, BuildContext context, Project project,
   }
   await repository.setLastRecipient(recipient);
 
-  final name = '${project.name}_${section.name} by '
-      '${section.operatorName}.json';
-  final tempDir = await getTemporaryDirectory();
-  final file = File(join(tempDir.path, name));
-  file.writeAsString(encoded);
-
   String itemsTable = '';
   for (var element in section.items) {
     itemsTable += '${element.barcode}  /  ${element.count} / '
@@ -68,22 +94,26 @@ Future<void> export(WidgetRef ref, BuildContext context, Project project,
         '${element.updated.toLocal()} / id:${element.id}\n';
   }
 
+  final jsonFilePath = await exportAsJson(exportData);
+  final csvFilePath = await exportAsCsv(exportData);
   String body = 'Project: ${project.name}\n'
       'Section: ${section.name}\n'
       'Operated by: ${section.operatorName}\n'
       'Item count: ${section.items.length}\n'
-      'Attachment file name: $name\n'
+      'Attached JSON: ${basename(jsonFilePath)}\n'
+      'Attached CSV: ${basename(csvFilePath)}\n'
       '\n'
       'Data:\n'
       '$itemsTable\n';
 
   final MailOptions mailOptions = MailOptions(
     body: body,
-    subject: 'Scan for `${project.name}`',
+    subject: '${project.name}_${section.name}_${section.operatorName}',
     recipients: [recipient],
     isHTML: false,
     attachments: [
-      file.path,
+      jsonFilePath,
+      csvFilePath,
     ],
   );
 
