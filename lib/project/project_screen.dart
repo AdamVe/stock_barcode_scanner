@@ -15,7 +15,9 @@ import 'section_dialog.dart';
 
 part 'project_screen.g.dart';
 
-enum _ProjectScreenAction { actionEditSection, actionDeleteSection }
+enum _SectionAction { actionEditSection, actionDeleteSection }
+
+enum _AppAction { changeProject }
 
 @Riverpod(keepAlive: true)
 class ProjectId extends _$ProjectId {
@@ -87,17 +89,32 @@ class ProjectScreen extends ConsumerWidget {
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           actions: [
-            if (hasProjects)
-              IconButton(
-                icon: const Icon(Icons.folder_copy_outlined),
-                tooltip: 'Manage projects',
-                onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(context,
-                      ProjectManagerScreen.routeName, (route) => false);
-                },
-              ),
+            PopupMenuButton<_AppAction>(
+              itemBuilder: (BuildContext context) => [
+                if (hasProjects)
+                  const PopupMenuItem<_AppAction>(
+                      value: _AppAction.changeProject,
+                      child: Text('Change project')),
+                const PopupMenuItem<_AppAction>(
+                  child: Text('Version: 1.0.0'),
+                ),
+              ],
+              onSelected: (_AppAction appAction) async {
+                switch (appAction) {
+                  case _AppAction.changeProject:
+                    Navigator.pushNamedAndRemoveUntil(context,
+                        ProjectManagerScreen.routeName, (route) => false);
+                  default:
+                }
+              },
+            ),
           ],
-          title: const Text('Sections'),
+          title: Text(
+            state.when(
+                data: (project) => 'Project: ${project?.name ?? 'No project'}',
+                loading: () => 'Sections loading',
+                error: (e, st) => 'Sections error'),
+          ),
         ),
         body: SafeArea(
           child: state.when(
@@ -244,20 +261,20 @@ class _SectionCard extends StatelessWidget {
                     IconButton(
                         onPressed: () async => onExport?.call(),
                         icon: const Icon(Icons.ios_share)),
-                    PopupMenuButton<_ProjectScreenAction>(
+                    PopupMenuButton<_SectionAction>(
                       itemBuilder: (BuildContext context) => [
-                        const PopupMenuItem<_ProjectScreenAction>(
-                            value: _ProjectScreenAction.actionEditSection,
+                        const PopupMenuItem<_SectionAction>(
+                            value: _SectionAction.actionEditSection,
                             child: Text('Edit')),
-                        const PopupMenuItem<_ProjectScreenAction>(
-                            value: _ProjectScreenAction.actionDeleteSection,
+                        const PopupMenuItem<_SectionAction>(
+                            value: _SectionAction.actionDeleteSection,
                             child: Text('Delete'))
                       ],
-                      onSelected: (_ProjectScreenAction sectionAction) async {
+                      onSelected: (_SectionAction sectionAction) async {
                         switch (sectionAction) {
-                          case _ProjectScreenAction.actionEditSection:
+                          case _SectionAction.actionEditSection:
                             onEdit?.call();
-                          case _ProjectScreenAction.actionDeleteSection:
+                          case _SectionAction.actionDeleteSection:
                             onDelete?.call();
                           default:
                         }
