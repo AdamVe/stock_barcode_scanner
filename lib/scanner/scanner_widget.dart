@@ -9,8 +9,7 @@ class _MobileScannerWidget extends StatelessWidget {
   final ScannerWidgetOverlay overlay;
   final Function(BarcodeCapture) onDetect;
 
-  const _MobileScannerWidget(
-      {required this.overlay, required this.onDetect});
+  const _MobileScannerWidget({required this.onDetect, required this.overlay});
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +19,11 @@ class _MobileScannerWidget extends StatelessWidget {
     );
     return MobileScanner(
       controller: controller,
-      scanWindow: overlay.getScanWindow(),
+      scanWindow: overlay.scanWindow,
       onDetect: onDetect,
-      overlay: overlay,
+      overlayBuilder: (context, constraints) {
+        return overlay;
+      },
     );
   }
 }
@@ -31,8 +32,7 @@ class _DesktopScannerWidget extends StatefulWidget {
   final ScannerWidgetOverlay overlay;
   final Function(BarcodeCapture) onDetect;
 
-  const _DesktopScannerWidget(
-      {required this.overlay, required this.onDetect});
+  const _DesktopScannerWidget({required this.onDetect, required this.overlay});
 
   @override
   State<_DesktopScannerWidget> createState() => _DesktopScannerWidgetState();
@@ -45,7 +45,7 @@ class _DesktopScannerWidgetState extends State<_DesktopScannerWidget> {
   @override
   void initState() {
     super.initState();
-    barcodeFieldController = TextEditingController();
+    barcodeFieldController = TextEditingController(text: '9780862412920');
   }
 
   @override

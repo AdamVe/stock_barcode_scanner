@@ -8,7 +8,7 @@ part of 'models.dart';
 
 _$ProjectImpl _$$ProjectImplFromJson(Map<String, dynamic> json) =>
     _$ProjectImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       details: json['details'] as String,
       created: DateTime.parse(json['created'] as String),
@@ -30,7 +30,7 @@ Map<String, dynamic> _$$ProjectImplToJson(_$ProjectImpl instance) =>
 
 _$SectionImpl _$$SectionImplFromJson(Map<String, dynamic> json) =>
     _$SectionImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       details: json['details'] as String,
       operatorName: json['operatorName'] as String,
@@ -52,11 +52,11 @@ Map<String, dynamic> _$$SectionImplToJson(_$SectionImpl instance) =>
 
 _$ScannedItemImpl _$$ScannedItemImplFromJson(Map<String, dynamic> json) =>
     _$ScannedItemImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       barcode: json['barcode'] as String,
       created: DateTime.parse(json['created'] as String),
       updated: DateTime.parse(json['updated'] as String),
-      count: json['count'] as int,
+      count: (json['count'] as num).toInt(),
     );
 
 Map<String, dynamic> _$$ScannedItemImplToJson(_$ScannedItemImpl instance) =>

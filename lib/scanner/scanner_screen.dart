@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/confirmation_dialog.dart';
@@ -16,9 +17,62 @@ import 'package:stock_barcode_scanner/theme.dart';
 import '../data/item_repository.dart';
 import '../domain/models.dart';
 
+part 'scanner_screen.freezed.dart';
 part 'scanner_screen.g.dart';
 
 const _scannedItemListHeight = 250.0;
+
+@freezed
+class ScanInfoData with _$ScanInfoData {
+  const factory ScanInfoData({
+    required bool duplicateReported,
+    required String current,
+    required String previous,
+    required bool scannerActive,
+  }) = __ScanInfoData;
+
+  factory ScanInfoData.fromJson(Map<String, Object?> json) =>
+      _$ScanInfoDataFromJson(json);
+}
+
+@Riverpod(keepAlive: true)
+class ScanInfo extends _$ScanInfo {
+  @override
+  ScanInfoData build() {
+    return const ScanInfoData(
+      duplicateReported: false,
+      current: '',
+      previous: '',
+      scannerActive: true,
+    );
+  }
+
+  void setCurrent(String current) {
+    state = state.copyWith(current: current);
+  }
+
+  void setPrevious(String previous) {
+    state = state.copyWith(previous: previous);
+  }
+
+  void setDuplicateReported(bool reported) {
+    state = state.copyWith(duplicateReported: reported);
+  }
+
+  void setActive(bool active) {
+    state = state.copyWith(scannerActive: active);
+  }
+}
+
+@Riverpod(keepAlive: true)
+class ScanningIsActive extends _$ScanningIsActive {
+  @override
+  bool build() => true;
+
+  void setValue(bool active) {
+    state = active;
+  }
+}
 
 @Riverpod(keepAlive: true)
 class CurrentSection extends _$CurrentSection {
@@ -53,6 +107,16 @@ class CurrentBarcode extends _$CurrentBarcode {
 
 @Riverpod(keepAlive: true)
 class DetectedBarcode extends _$DetectedBarcode {
+  @override
+  String build() => '';
+
+  void update(String newValue) {
+    state = newValue;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class ShownBarcode extends _$ShownBarcode {
   @override
   String build() => '';
 
@@ -167,56 +231,60 @@ class ScannerScreen extends ConsumerStatefulWidget {
 
 class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   Timer? _timer;
+  Timer? _detectionTimer;
+  double testV = 0;
+  double widthFactor = 1.0;
+  double op = 1.0;
 
   @override
   Widget build(BuildContext context) {
     final scanSound = ref.watch(scanSoundProvider);
     final section = ref.watch(currentSectionProvider);
 
-    ref.listen(detectedBarcodeProvider, (previous, next) async {
-      if (next.isEmpty) {
-        if (kDebugMode) {
-          print('No barcode detected');
-        }
-        return;
-      }
-
-      if (next != ref.watch(lastSeenBarcodeProvider)) {
-        if (kDebugMode) {
-          print('Found new barcode: $next');
-        }
-
-        HapticFeedback.mediumImpact();
-        scanSound.resume();
-
-        final createdUpdatedDate = DateTime.now();
-
-        final newScannedItem = ScannedItem(
-          id: 0,
-          barcode: next,
-          created: createdUpdatedDate,
-          updated: createdUpdatedDate,
-          count: 1,
-        );
-
-        ref
-            .read(_controllerProvider.notifier)
-            .addScannedItem(section.id, newScannedItem)
-            .then((id) => ref
-                .read(currentBarcodeProvider.notifier)
-                .update(newScannedItem.copyWith(id: id)));
-      } else {
-        if (previous?.isEmpty ?? true) {
-          if (kDebugMode) {
-            print('Notifying duplicate scan');
-          }
-          ref.read(duplicateProvider.notifier).update(true);
-        }
-        if (kDebugMode) {
-          print('See old barcode: $next');
-        }
-      }
-    });
+    // ref.listen(detectedBarcodeProvider, (previous, next) async {
+    //   if (next.isEmpty) {
+    //     if (kDebugMode) {
+    //       print('No barcode detected');
+    //     }
+    //     return;
+    //   }
+    //
+    //   if (next != ref.watch(lastSeenBarcodeProvider)) {
+    //     if (kDebugMode) {
+    //       print('Found new barcode: $next');
+    //     }
+    //
+    //     HapticFeedback.mediumImpact();
+    //     scanSound.resume();
+    //
+    //     // final createdUpdatedDate = DateTime.now();
+    //     //
+    //     // final newScannedItem = ScannedItem(
+    //     //   id: 0,
+    //     //   barcode: next,
+    //     //   created: createdUpdatedDate,
+    //     //   updated: createdUpdatedDate,
+    //     //   count: 1,
+    //     // );
+    //     //
+    //     // ref
+    //     //     .read(_controllerProvider.notifier)
+    //     //     .addScannedItem(section.id, newScannedItem)
+    //     //     .then((id) => ref
+    //     //         .read(currentBarcodeProvider.notifier)
+    //     //         .update(newScannedItem.copyWith(id: id)));
+    //   } else {
+    //     if (previous?.isEmpty ?? true) {
+    //       if (kDebugMode) {
+    //         print('Notifying duplicate scan');
+    //       }
+    //       //ref.read(duplicateProvider.notifier).update(true);
+    //     }
+    //     if (kDebugMode) {
+    //       print('See old barcode: $next');
+    //     }
+    //   }
+    // });
 
     return Theme(
       data: ref.read(themeDataProvider(Brightness.dark)),
@@ -239,7 +307,16 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                     ScannerWidget(
                       overlay: ScannerWidgetOverlay(scanWindow: scanRect),
                       onDetect: (capture) async {
-                        final currentBarcode = capture.barcodes
+                        _detectionTimer?.cancel();
+                        if (!ref.read(scanInfoProvider).scannerActive) {
+                          if (kDebugMode) {
+                            print('Scanner not active');
+                          }
+                          return;
+                        }
+
+                        // valid scanned barcode
+                        final scanned = capture.barcodes
                                 .where((element) =>
                                     element.format == BarcodeFormat.ean13)
                                 .firstOrNull
@@ -247,32 +324,279 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                             '';
 
                         if (kDebugMode) {
-                          print('Detected barcode: $currentBarcode');
+                          print('Detected barcode: $scanned');
                         }
 
-                        if (currentBarcode.isNotEmpty) {
-                          _timer?.cancel();
+                        if (scanned.isNotEmpty) {
+                          var previous = ref.read(scanInfoProvider).previous;
 
                           ref
-                              .read(detectedBarcodeProvider.notifier)
-                              .update(currentBarcode);
+                              .read(scanInfoProvider.notifier)
+                              .setPrevious(scanned);
 
-                          ref
-                              .read(lastSeenBarcodeProvider.notifier)
-                              .update(currentBarcode);
-
-                          // start timer to clear the code if not detected
-                          _timer = Timer(const Duration(milliseconds: 750), () {
+                          // this has not been same as previous
+                          if (scanned != previous) {
                             if (kDebugMode) {
-                              print('clearing detected barcode');
+                              print('Setting scanner not active');
                             }
+                            ref
+                                .read(scanInfoProvider.notifier)
+                                .setActive(false);
+                            _timer?.cancel();
 
                             ref
-                                .read(detectedBarcodeProvider.notifier)
-                                .update('');
-                          });
+                                .read(scanInfoProvider.notifier)
+                                .setCurrent(scanned);
+
+                            // start a detection timer which will clear current
+                            // barcode if not detected in a time period
+                            _detectionTimer =
+                                Timer(const Duration(milliseconds: 300), () {
+                              if (kDebugMode) {
+                                print('No barcode detected anymore');
+                              }
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setCurrent('');
+                            });
+
+                            setState(() {
+                              testV = constraints.maxHeight - 120;
+                              op = 0.3;
+                              widthFactor = 0.7;
+                            });
+
+                            ref
+                                .read(shownBarcodeProvider.notifier)
+                                .update(scanned);
+
+                            // start timer to clear the code if not detected
+                            if (kDebugMode) {
+                              print('Started timer in branch 1');
+                            }
+                            _timer =
+                                Timer(const Duration(milliseconds: 750), () {
+                              if (kDebugMode) {
+                                print('Timer in branch 1 started execution');
+                              }
+                              final createdUpdatedDate = DateTime.now();
+
+                              final newScannedItem = ScannedItem(
+                                id: 0,
+                                barcode: scanned,
+                                created: createdUpdatedDate,
+                                updated: createdUpdatedDate,
+                                count: 1,
+                              );
+
+                              if (kDebugMode) {
+                                print('adding detected item to item list');
+                              }
+                              ref
+                                  .read(_controllerProvider.notifier)
+                                  .addScannedItem(section.id, newScannedItem)
+                                  .then((id) => ref
+                                      .read(currentBarcodeProvider.notifier)
+                                      .update(newScannedItem.copyWith(id: id)));
+
+                              if (kDebugMode) {
+                                print('clearing detected barcode');
+                              }
+
+                              ref
+                                  .read(shownBarcodeProvider.notifier)
+                                  .update('');
+                              setState(() {
+                                testV = 0;
+                                widthFactor = 1.0;
+                                op = 1.0;
+                              });
+
+                              if (kDebugMode) {
+                                print('Setting scanner active');
+                              }
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setActive(true);
+
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setCurrent('');
+
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setDuplicateReported(true);
+
+                              if (kDebugMode) {
+                                print(
+                                    'scanInfoProvider: ${ref.read(scanInfoProvider)}');
+                              }
+                              if (kDebugMode) {
+                                print('Timer in branch 1 ended execution');
+                              }
+                            });
+                          } else if (!ref
+                              .read(scanInfoProvider)
+                              .duplicateReported) {
+                            if (kDebugMode) {
+                              print('Notifying duplicate scan');
+                            }
+                            ref.read(duplicateProvider.notifier).update(true);
+
+                            if (kDebugMode) {
+                              print('See old barcode: $scanned');
+                            }
+
+                            // same as last seen
+                            if (kDebugMode) {
+                              print('Started timer in branch 2');
+                            }
+                            _timer =
+                                Timer(const Duration(milliseconds: 750), () {
+                              if (kDebugMode) {
+                                print('Timer in branch 2 started execution');
+                              }
+                              if (kDebugMode) {
+                                print('Setting scanner active');
+                              }
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setActive(true);
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setCurrent('');
+                              ref
+                                  .read(scanInfoProvider.notifier)
+                                  .setDuplicateReported(true);
+
+                              if (kDebugMode) {
+                                print(
+                                    'scanInfoProvider: ${ref.read(scanInfoProvider)}');
+                              }
+
+                              if (kDebugMode) {
+                                print('Timer in branch 2 ended execution');
+                              }
+                            });
+                          } else if (ref
+                              .read(scanInfoProvider)
+                              .current
+                              .isEmpty) {
+                            ref
+                                .read(scanInfoProvider.notifier)
+                                .setDuplicateReported(false);
+                          }
                         }
+
+                        // if (false) {
+                        //   if (currentBarcode.isNotEmpty &&
+                        //       ref.read(scanningIsActiveProvider)) {
+                        //     ref
+                        //         .read(scanningIsActiveProvider.notifier)
+                        //         .setValue(false);
+                        //     _timer?.cancel();
+                        //
+                        //     var lastSeen = ref.read(lastSeenBarcodeProvider);
+                        //
+                        //     ref
+                        //         .read(detectedBarcodeProvider.notifier)
+                        //         .update(currentBarcode);
+                        //
+                        //     ref
+                        //         .read(lastSeenBarcodeProvider.notifier)
+                        //         .update(currentBarcode);
+                        //
+                        //     // this has not been same as previous
+                        //     if (currentBarcode != lastSeen) {
+                        //       setState(() {
+                        //         testV = constraints.maxHeight - 120;
+                        //         op = 0.3;
+                        //         widthFactor = 0.7;
+                        //       });
+                        //
+                        //       ref
+                        //           .read(shownBarcodeProvider.notifier)
+                        //           .update(currentBarcode);
+                        //
+                        //       // start timer to clear the code if not detected
+                        //       _timer =
+                        //           Timer(const Duration(milliseconds: 750), () {
+                        //         final createdUpdatedDate = DateTime.now();
+                        //
+                        //         final newScannedItem = ScannedItem(
+                        //           id: 0,
+                        //           barcode: currentBarcode,
+                        //           created: createdUpdatedDate,
+                        //           updated: createdUpdatedDate,
+                        //           count: 1,
+                        //         );
+                        //
+                        //         if (kDebugMode) {
+                        //           print('adding detected item to item list');
+                        //         }
+                        //         ref
+                        //             .read(_controllerProvider.notifier)
+                        //             .addScannedItem(section.id, newScannedItem)
+                        //             .then((id) => ref
+                        //                 .read(currentBarcodeProvider.notifier)
+                        //                 .update(
+                        //                     newScannedItem.copyWith(id: id)));
+                        //
+                        //         if (kDebugMode) {
+                        //           print('clearing detected barcode');
+                        //         }
+                        //         // ref
+                        //         //     .read(detectedBarcodeProvider.notifier)
+                        //         //     .update('');
+                        //
+                        //         ref
+                        //             .read(shownBarcodeProvider.notifier)
+                        //             .update('');
+                        //         setState(() {
+                        //           testV = 0;
+                        //           widthFactor = 1.0;
+                        //           op = 1.0;
+                        //         });
+                        //         ref
+                        //             .read(scanningIsActiveProvider.notifier)
+                        //             .setValue(true);
+                        //       });
+                        //     } else {
+                        //       // same as last seen
+                        //       _timer =
+                        //           Timer(const Duration(milliseconds: 750), () {
+                        //         ref
+                        //             .read(duplicateProvider.notifier)
+                        //             .update(true);
+                        //         ref
+                        //             .read(scanningIsActiveProvider.notifier)
+                        //             .setValue(true);
+                        //       });
+                        //     }
+                        //   }
+                        // }
                       },
+                    ),
+                    AnimatedPositioned(
+                      top: scanRect.top + testV,
+                      left: scanRect.bottomCenter.dx -
+                          (widthFactor * scanRect.width / 2),
+                      width: widthFactor * scanRect.width,
+                      height: scanRect.height,
+                      duration: const Duration(milliseconds: 750),
+                      curve: Curves.easeInBack,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 750),
+                        opacity: op,
+                        curve: Curves.easeInBack,
+                        child: FittedBox(
+                          fit: BoxFit.fitWidth,
+                          child: Text(
+                            ref.read(shownBarcodeProvider),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
                     ),
                     const _AdjustScanCountWidget(),
                   ]);
@@ -297,6 +621,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _detectionTimer?.cancel();
     super.dispose();
   }
 }

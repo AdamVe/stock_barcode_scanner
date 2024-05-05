@@ -3,6 +3,26 @@
 part of 'scanner_screen.dart';
 
 // **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$_ScanInfoDataImpl _$$_ScanInfoDataImplFromJson(Map<String, dynamic> json) =>
+    _$_ScanInfoDataImpl(
+      duplicateReported: json['duplicateReported'] as bool,
+      current: json['current'] as String,
+      previous: json['previous'] as String,
+      scannerActive: json['scannerActive'] as bool,
+    );
+
+Map<String, dynamic> _$$_ScanInfoDataImplToJson(_$_ScanInfoDataImpl instance) =>
+    <String, dynamic>{
+      'duplicateReported': instance.duplicateReported,
+      'current': instance.current,
+      'previous': instance.previous,
+      'scannerActive': instance.scannerActive,
+    };
+
+// **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
@@ -35,6 +55,36 @@ final duplicateSoundProvider = Provider<AudioPlayer>.internal(
 );
 
 typedef DuplicateSoundRef = ProviderRef<AudioPlayer>;
+String _$scanInfoHash() => r'cd7de558457b9f11233609f0ac5e50939d653948';
+
+/// See also [ScanInfo].
+@ProviderFor(ScanInfo)
+final scanInfoProvider = NotifierProvider<ScanInfo, ScanInfoData>.internal(
+  ScanInfo.new,
+  name: r'scanInfoProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$scanInfoHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ScanInfo = Notifier<ScanInfoData>;
+String _$scanningIsActiveHash() => r'7be794ddd8070f32bb937179f0a869d7f1b3e4cd';
+
+/// See also [ScanningIsActive].
+@ProviderFor(ScanningIsActive)
+final scanningIsActiveProvider =
+    NotifierProvider<ScanningIsActive, bool>.internal(
+  ScanningIsActive.new,
+  name: r'scanningIsActiveProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$scanningIsActiveHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ScanningIsActive = Notifier<bool>;
 String _$currentSectionHash() => r'61ed4445e0dd548f3008cd446aeb811055745a2e';
 
 /// See also [CurrentSection].
@@ -83,6 +133,20 @@ final detectedBarcodeProvider =
 );
 
 typedef _$DetectedBarcode = Notifier<String>;
+String _$shownBarcodeHash() => r'7ad8f6133eb72c843ee5d4b7089ab5cd525850f4';
+
+/// See also [ShownBarcode].
+@ProviderFor(ShownBarcode)
+final shownBarcodeProvider = NotifierProvider<ShownBarcode, String>.internal(
+  ShownBarcode.new,
+  name: r'shownBarcodeProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$shownBarcodeHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$ShownBarcode = Notifier<String>;
 String _$lastSeenBarcodeHash() => r'975ea17d3269495e99b83f0f25c33d3aeb016430';
 
 /// See also [LastSeenBarcode].
