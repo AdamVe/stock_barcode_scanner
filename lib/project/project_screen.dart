@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../confirmation_dialog.dart';
@@ -144,7 +145,7 @@ class ProjectScreen extends ConsumerWidget {
                         .createSection(state.value!.id, section);
                   }
                 },
-                icon: const Icon(Icons.add),
+                icon: const Icon(Symbols.add),
                 label: const Text('New section'),
               )
             : null);
@@ -186,7 +187,7 @@ class _SectionList extends ConsumerWidget {
                         .deleteSection(section);
                   })
                 ],
-                icon: const Icon(Icons.delete_outline_outlined),
+                icon: const Icon(Symbols.delete_outline),
               );
             },
             onEdit: () async {
@@ -260,7 +261,7 @@ class _SectionCard extends StatelessWidget {
                   children: [
                     IconButton(
                         onPressed: () async => onExport?.call(),
-                        icon: const Icon(Icons.ios_share)),
+                        icon: const Icon(Symbols.ios_share)),
                     PopupMenuButton<_SectionAction>(
                       itemBuilder: (BuildContext context) => [
                         const PopupMenuItem<_SectionAction>(
@@ -325,7 +326,7 @@ class _SectionCard extends StatelessWidget {
               children: [
                 ElevatedButton.icon(
                     onPressed: () async => onScan?.call(),
-                    icon: const Icon(Icons.document_scanner_outlined),
+                    icon: const Icon(Symbols.document_scanner),
                     label: const Text('Scan')),
               ],
             )

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
 import 'package:stock_barcode_scanner/date_time_ext.dart';
@@ -83,7 +84,7 @@ class ProjectManagerScreen extends ConsumerWidget {
             ref.read(_controllerProvider.notifier).addProject(newProject);
           }
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Symbols.add),
       ),
     );
   }
@@ -103,7 +104,7 @@ class _ProjectList extends ConsumerWidget {
           leading: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.insert_drive_file_outlined),
+              Icon(Symbols.insert_drive_file),
             ],
           ),
           trailing: PopupMenuButton<ProjectManagerAction>(
@@ -130,7 +131,7 @@ class _ProjectList extends ConsumerWidget {
                           .deleteProject(project);
                     })
                   ],
-                  icon: const Icon(Icons.delete_outline_outlined),
+                  icon: const Icon(Symbols.delete_outline),
                 );
               } else if (projectAction ==
                   ProjectManagerAction.actionEditProject) {

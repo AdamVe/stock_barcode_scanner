@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_widget_overlay.dart';
 
@@ -81,7 +82,7 @@ class _DesktopScannerWidgetState extends State<_DesktopScannerWidget> {
                     onPressed: () {
                       _submit(barcodeFieldController?.text ?? '');
                     },
-                    icon: const Icon(Icons.keyboard_return_outlined),
+                    icon: const Icon(Symbols.keyboard_return),
                   )
                 ],
               ),

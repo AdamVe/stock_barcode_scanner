@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -183,7 +184,7 @@ class _ExportDialogState extends ConsumerState<_ExportDialog> {
               onPressed: () {
                 Navigator.of(context).pop(null);
               },
-              icon: const Icon(Icons.close)),
+              icon: const Icon(Symbols.close)),
           title: const Text('Review export'),
           actions: [
             TextButton(

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
 class ScannerWidgetOverlay extends ConsumerStatefulWidget {
@@ -151,7 +152,7 @@ class _BarcodeDetectionIcon extends ConsumerWidget {
         : Colors.white.withOpacity(0.3);
 
     return Icon(
-      Icons.remove_red_eye_outlined,
+      Symbols.remove_red_eye,
       size: 32,
       color: detectionColor,
     );

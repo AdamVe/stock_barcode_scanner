@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stock_barcode_scanner/confirmation_dialog.dart';
@@ -668,7 +669,7 @@ class _AdjustScanCountWidget extends ConsumerWidget {
                           ? () => _update(ref, -1)
                           : null,
                       child: const Icon(
-                        Icons.remove,
+                        Symbols.remove,
                         size: 32,
                       )),
                   SizedBox(
@@ -683,7 +684,7 @@ class _AdjustScanCountWidget extends ConsumerWidget {
                           ? () => _update(ref, 1)
                           : null,
                       child: const Icon(
-                        Icons.add,
+                        Symbols.add,
                         size: 32,
                       )),
                 ],
@@ -699,7 +700,7 @@ class _ScannedItemListError extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Column(children: [
         ListTile(
-          leading: Icon(Icons.document_scanner_outlined),
+          leading: Icon(Symbols.document_scanner),
           title: Text('Items'),
           subtitle: Text('Error loading data'),
         ),
@@ -715,7 +716,7 @@ class _ScannedItemListLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Column(children: [
         ListTile(
-          leading: Icon(Icons.document_scanner_outlined),
+          leading: Icon(Symbols.document_scanner),
           title: Text('Items'),
           subtitle: Text('Loading'),
         ),
@@ -738,7 +739,7 @@ class _ScannedItemList extends ConsumerWidget {
           data: (scannedItems) => Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.document_scanner_outlined),
+                    leading: const Icon(Symbols.document_scanner),
                     title: Text('${scannedItems.length} items'),
                   ),
                   SizedBox(
@@ -771,8 +772,7 @@ class _ScannedItemList extends ConsumerWidget {
                                             .deleteScannedItem(scannedItem);
                                       })
                                     ],
-                                    icon: const Icon(
-                                        Icons.delete_outline_outlined));
+                                    icon: const Icon(Symbols.delete_outline));
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
