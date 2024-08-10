@@ -238,7 +238,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scanSound = ref.watch(scanSoundProvider);
+    //final scanSound = ref.watch(scanSoundProvider);
     final section = ref.watch(currentSectionProvider);
 
     // ref.listen(detectedBarcodeProvider, (previous, next) async {

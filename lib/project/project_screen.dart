@@ -256,7 +256,7 @@ class _SectionCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                ButtonBar(
+                OverflowBar(
                   children: [
                     IconButton(
                         onPressed: () async => onExport?.call(),

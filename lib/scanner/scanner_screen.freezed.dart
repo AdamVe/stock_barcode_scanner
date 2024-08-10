@@ -25,8 +25,12 @@ mixin _$ScanInfoData {
   String get previous => throw _privateConstructorUsedError;
   bool get scannerActive => throw _privateConstructorUsedError;
 
+  /// Serializes this ScanInfoData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of ScanInfoData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $ScanInfoDataCopyWith<ScanInfoData> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -54,6 +58,8 @@ class _$ScanInfoDataCopyWithImpl<$Res, $Val extends ScanInfoData>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ScanInfoData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -106,6 +112,8 @@ class __$$_ScanInfoDataImplCopyWithImpl<$Res>
       _$_ScanInfoDataImpl _value, $Res Function(_$_ScanInfoDataImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of ScanInfoData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -188,12 +196,14 @@ class _$_ScanInfoDataImpl
                 other.scannerActive == scannerActive));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType, duplicateReported, current, previous, scannerActive);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ScanInfoData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$_ScanInfoDataImplCopyWith<_$_ScanInfoDataImpl> get copyWith =>
@@ -225,8 +235,11 @@ abstract class __ScanInfoData implements ScanInfoData {
   String get previous;
   @override
   bool get scannerActive;
+
+  /// Create a copy of ScanInfoData
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$_ScanInfoDataImplCopyWith<_$_ScanInfoDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

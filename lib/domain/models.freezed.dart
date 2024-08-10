@@ -27,8 +27,12 @@ mixin _$Project {
   DateTime get accessed => throw _privateConstructorUsedError;
   List<Section> get sections => throw _privateConstructorUsedError;
 
+  /// Serializes this Project to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Project
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $ProjectCopyWith<Project> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -56,6 +60,8 @@ class _$ProjectCopyWithImpl<$Res, $Val extends Project>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Project
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -119,6 +125,8 @@ class __$$ProjectImplCopyWithImpl<$Res>
       _$ProjectImpl _value, $Res Function(_$ProjectImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Project
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -210,12 +218,14 @@ class _$ProjectImpl implements _Project {
             const DeepCollectionEquality().equals(other._sections, _sections));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, details, created,
       accessed, const DeepCollectionEquality().hash(_sections));
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Project
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$ProjectImplCopyWith<_$ProjectImpl> get copyWith =>
@@ -252,8 +262,11 @@ abstract class _Project implements Project {
   DateTime get accessed;
   @override
   List<Section> get sections;
+
+  /// Create a copy of Project
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ProjectImplCopyWith<_$ProjectImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -271,8 +284,12 @@ mixin _$Section {
   DateTime get created => throw _privateConstructorUsedError;
   List<ScannedItem> get items => throw _privateConstructorUsedError;
 
+  /// Serializes this Section to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Section
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $SectionCopyWith<Section> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -300,6 +317,8 @@ class _$SectionCopyWithImpl<$Res, $Val extends Section>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Section
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -363,6 +382,8 @@ class __$$SectionImplCopyWithImpl<$Res>
       _$SectionImpl _value, $Res Function(_$SectionImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Section
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -454,12 +475,14 @@ class _$SectionImpl implements _Section {
             const DeepCollectionEquality().equals(other._items, _items));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, details, operatorName,
       created, const DeepCollectionEquality().hash(_items));
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Section
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$SectionImplCopyWith<_$SectionImpl> get copyWith =>
@@ -496,8 +519,11 @@ abstract class _Section implements Section {
   DateTime get created;
   @override
   List<ScannedItem> get items;
+
+  /// Create a copy of Section
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$SectionImplCopyWith<_$SectionImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -514,8 +540,12 @@ mixin _$ScannedItem {
   DateTime get updated => throw _privateConstructorUsedError;
   int get count => throw _privateConstructorUsedError;
 
+  /// Serializes this ScannedItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of ScannedItem
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $ScannedItemCopyWith<ScannedItem> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -540,6 +570,8 @@ class _$ScannedItemCopyWithImpl<$Res, $Val extends ScannedItem>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ScannedItem
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -594,6 +626,8 @@ class __$$ScannedItemImplCopyWithImpl<$Res>
       _$ScannedItemImpl _value, $Res Function(_$ScannedItemImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of ScannedItem
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -669,12 +703,14 @@ class _$ScannedItemImpl implements _ScannedItem {
             (identical(other.count, count) || other.count == count));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
       Object.hash(runtimeType, id, barcode, created, updated, count);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ScannedItem
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$ScannedItemImplCopyWith<_$ScannedItemImpl> get copyWith =>
@@ -709,8 +745,11 @@ abstract class _ScannedItem implements ScannedItem {
   DateTime get updated;
   @override
   int get count;
+
+  /// Create a copy of ScannedItem
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$ScannedItemImplCopyWith<_$ScannedItemImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
