@@ -52,11 +52,11 @@ Map<String, dynamic> _$$SectionImplToJson(_$SectionImpl instance) =>
 
 _$ScannedItemImpl _$$ScannedItemImplFromJson(Map<String, dynamic> json) =>
     _$ScannedItemImpl(
-      id: (json['id'] as num).toInt(),
+      id: (json['id'] as num?)?.toInt() ?? 0,
       barcode: json['barcode'] as String,
       created: DateTime.parse(json['created'] as String),
       updated: DateTime.parse(json['updated'] as String),
-      count: (json['count'] as num).toInt(),
+      count: (json['count'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$ScannedItemImplToJson(_$ScannedItemImpl instance) =>

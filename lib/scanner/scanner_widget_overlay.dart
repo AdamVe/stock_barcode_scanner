@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+
+import 'models.dart';
 
 class ScannerWidgetOverlay extends ConsumerStatefulWidget {
   final Rect scanWindow;
@@ -35,18 +36,14 @@ class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
   @override
   Widget build(BuildContext context) {
     final duplicateSoundPlayer = ref.watch(duplicateSoundProvider);
-    ref.listen(duplicateProvider, (previous, next) async {
-      if (next == true) {
+    ref.listen(scannerEventsProvider, (previous, next) async {
+      if (next is DuplicateCode) {
         TickerFuture tickerFuture = _controller.repeat();
         tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
           _controller.forward(from: 0);
           _controller.stop(canceled: true);
           setState(() {
             _showDuplicate = false;
-            if (kDebugMode) {
-              print('Clearing duplicate scan notification');
-            }
-            ref.read(duplicateProvider.notifier).update(false);
           });
         });
 
@@ -145,17 +142,33 @@ class _BarcodeDetectionIcon extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final seeBarcode = ref.watch(detectedBarcodeProvider) != '';
+    final s = ref.watch(scannerEventsProvider);
 
-    final detectionColor = seeBarcode
-        ? Colors.green.withOpacity(1)
-        : Colors.white.withOpacity(0.3);
+    final code = switch (s) {
+      NewCode c => c.code,
+      DuplicateCode d => '${d.code} (Duplicate)',
+      CandidateCode c => 'Candidate ${c.code}',
+      _ => ''
+    };
 
-    return Icon(
-      Symbols.remove_red_eye,
-      size: 32,
-      color: detectionColor,
-    );
+    final detectionColor = switch (s) {
+      NewCode _ => Colors.white.withOpacity(1.0),
+      DuplicateCode _ => Colors.red.withOpacity(0.5),
+      CandidateCode _ => Colors.white.withOpacity(0.5),
+      _ => Colors.white.withOpacity(0.1),
+    };
+
+    return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Icon(
+            Symbols.remove_red_eye,
+            size: 32,
+            color: detectionColor,
+          ),
+          Text(code)
+        ]);
   }
 }
 

@@ -16,7 +16,7 @@ class _MobileScannerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = MobileScannerController(
       detectionSpeed: DetectionSpeed.normal,
-      detectionTimeoutMs: 350,
+      detectionTimeoutMs: 250,
     );
     return MobileScanner(
       controller: controller,
