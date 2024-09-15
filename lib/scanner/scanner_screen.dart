@@ -260,8 +260,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
   DateTime firstTimeSeen = DateTime(0);
 
   Rect _getScanRect(double width, double height) {
-    final center = Offset(width / 2, 160);
-    const scanWinHeight = 130.0;
+    final center = Offset(width / 2, 200);
+    const scanWinHeight = 140.0;
     final scanWinWidth = width - 80;
     return Rect.fromCenter(
         center: center, width: scanWinWidth, height: scanWinHeight);

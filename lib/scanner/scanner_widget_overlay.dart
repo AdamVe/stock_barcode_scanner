@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,9 +9,12 @@ import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
 import 'models.dart';
 
+const pi_2 = pi / 2.0;
+const pi_3_2 = 3.0 * pi_2;
+
 class ScannerWidgetOverlay extends ConsumerStatefulWidget {
   final Rect scanWindow;
-  final backgroundColor = const Color.fromARGB(50, 0, 0, 0);
+  final backgroundColor = const Color.fromARGB(140, 0, 0, 0);
 
   const ScannerWidgetOverlay({
     super.key,
@@ -173,28 +177,47 @@ class _BarcodeDetectionIcon extends ConsumerWidget {
 }
 
 class _OverlayForeground extends ConsumerWidget {
-  static const _strokeWidth = 1.0;
-  static const _strokeWidth_2 = _strokeWidth / 2;
+  static const _strokeWidth = 5.0;
   final Rect _scanWindow;
   final Path _cutoutPath;
-  final Paint _cutoutPaint;
 
-  _OverlayForeground(this._scanWindow)
-      : _cutoutPath = _buildPath(_scanWindow),
-        _cutoutPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..color = Colors.white.withOpacity(0.9);
+  _OverlayForeground(this._scanWindow) : _cutoutPath = _buildPath(_scanWindow);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(scannerEventsProvider);
+
+    final detectionColor = switch (s) {
+      NewCode _ => Colors.green.withOpacity(1.0),
+      DuplicateCode _ => Colors.red.withOpacity(0.7),
+      CandidateCode _ => Colors.green.withOpacity(0.7),
+      _ => Colors.white.withOpacity(0.7),
+    };
+
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..color = detectionColor;
+
     return Stack(
       children: [
         _PathPainter(
           path: _cutoutPath,
-          pathPaint: _cutoutPaint,
+          pathPaint: strokePaint,
         ),
+        // Positioned(
+        //   left: 0,
+        //   right: 0,
+        //   top: _scanWindow.bottomCenter.dy,
+        //   child: ColoredBox(
+        //     color: Colors.transparent,
+        //     child: Text(
+        //       'Scan an item...',
+        //       textAlign: TextAlign.center,
+        //     ),
+        //   ),
+        // ),
         Positioned(
           left: _scanWindow.left,
           top: _scanWindow.top - 32,
@@ -205,43 +228,20 @@ class _OverlayForeground extends ConsumerWidget {
   }
 
   static Path _buildPath(Rect rect) {
-    final x1 = rect.center.dx - rect.width / 2;
-    final y1 = rect.center.dy - rect.height / 2;
-    final x2 = rect.center.dx + rect.width / 2;
-    final y2 = rect.center.dy + rect.height / 2;
+    final x1 = rect.center.dx - rect.width / 2 + 5;
+    final y1 = rect.center.dy - rect.height / 2 + 5;
+    final x2 = rect.center.dx + rect.width / 2 - 5;
+    final y2 = rect.center.dy + rect.height / 2 - 5;
+
+    final r1 = Rect.fromLTWH(x1, y1, 40, 40);
+    final r2 = Rect.fromLTWH(x2 - 40, y1, 40, 40);
+    final r3 = Rect.fromLTWH(x1, y2 - 40, 40, 40);
+    final r4 = Rect.fromLTWH(x2 - 40, y2 - 40, 40, 40);
     return Path()
-      ..addPolygon([
-        Offset(x1 - _strokeWidth_2, y1 - 5),
-        Offset(x1 - _strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y1 - _strokeWidth_2),
-        Offset(x1 + 20, y1 - _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + _strokeWidth_2, y2 - 20),
-        Offset(x2 + _strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y2 + _strokeWidth_2),
-        Offset(x2 + 5, y2 + _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - _strokeWidth_2, y2 - 20),
-        Offset(x1 - _strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y2 + _strokeWidth_2),
-        Offset(x1 + 20, y2 + _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + _strokeWidth_2, y1 - 5),
-        Offset(x2 + _strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y1 - _strokeWidth_2),
-        Offset(x2 + 5, y1 - _strokeWidth_2)
-      ], false);
+      ..addArc(r1, pi, pi_2)
+      ..addArc(r2, pi_3_2, pi_2)
+      ..addArc(r3, pi_2, pi_2)
+      ..addArc(r4, 0, pi_2);
   }
 }
 
@@ -259,6 +259,6 @@ class _OverlayBackground extends StatelessWidget {
   }
 
   static Path _buildPath(Rect rect) {
-    return Path()..addRRect(RRect.fromRectXY(rect, 0, 0));
+    return Path()..addRRect(RRect.fromRectXY(rect, 25, 25));
   }
 }
