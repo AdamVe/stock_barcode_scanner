@@ -21,7 +21,7 @@ final scannedCodeProvider =
 );
 
 typedef _$ScannedCode = AutoDisposeNotifier<String?>;
-String _$scannerEventsHash() => r'0a2510c3521c58ea8b0480253fc4163e542c1536';
+String _$scannerEventsHash() => r'93b6924f6de05be8371fc600456fda1a49d6a7a5';
 
 /// See also [ScannerEvents].
 @ProviderFor(ScannerEvents)

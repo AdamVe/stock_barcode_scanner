@@ -3,26 +3,6 @@
 part of 'scanner_screen.dart';
 
 // **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-_$_ScanInfoDataImpl _$$_ScanInfoDataImplFromJson(Map<String, dynamic> json) =>
-    _$_ScanInfoDataImpl(
-      duplicateReported: json['duplicateReported'] as bool,
-      current: json['current'] as String,
-      previous: json['previous'] as String,
-      scannerActive: json['scannerActive'] as bool,
-    );
-
-Map<String, dynamic> _$$_ScanInfoDataImplToJson(_$_ScanInfoDataImpl instance) =>
-    <String, dynamic>{
-      'duplicateReported': instance.duplicateReported,
-      'current': instance.current,
-      'previous': instance.previous,
-      'scannerActive': instance.scannerActive,
-    };
-
-// **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
@@ -71,23 +51,7 @@ final currentSectionProvider =
 );
 
 typedef _$CurrentSection = Notifier<Section>;
-String _$currentBarcodeHash() => r'56d70576a7a5d1cb5cb448bed590f115b5c0ba4b';
-
-/// See also [CurrentBarcode].
-@ProviderFor(CurrentBarcode)
-final currentBarcodeProvider =
-    NotifierProvider<CurrentBarcode, ScannedItem>.internal(
-  CurrentBarcode.new,
-  name: r'currentBarcodeProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$currentBarcodeHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$CurrentBarcode = Notifier<ScannedItem>;
-String _$controllerHash() => r'cb969a014f7eddfffa9aae91d3a5881696c6966a';
+String _$controllerHash() => r'549ddccc307f038253fcbc4f0f15abb5bd76d1c6';
 
 /// See also [_Controller].
 @ProviderFor(_Controller)

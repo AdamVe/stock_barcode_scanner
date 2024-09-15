@@ -89,7 +89,7 @@ class ScannerEvents extends _$ScannerEvents {
         return DuplicateCode(scannedCode);
       }
 
-      _promoteCandidate = Timer(const Duration(milliseconds: 2500), () {
+      _promoteCandidate = Timer(const Duration(milliseconds: 300), () {
         _lastCode = _candidateCode;
         state = NewCode(_candidateCode!);
       });
