@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -18,8 +17,6 @@ import 'scanner_widget.dart';
 import 'scanner_widget_overlay.dart';
 
 part 'scanner_screen.g.dart';
-
-final _log = Logger('scanner');
 
 @Riverpod(keepAlive: true)
 class CurrentSection extends _$CurrentSection {
@@ -44,7 +41,6 @@ AudioPlayer scanSound(ScanSoundRef ref) {
     ..setReleaseMode(ReleaseMode.stop);
 
   ref.onDispose(() {
-    _log.fine('scanSoundProvider audio player disposed');
     player.dispose();
   });
 
@@ -58,7 +54,6 @@ AudioPlayer duplicateSound(DuplicateSoundRef ref) {
     ..setReleaseMode(ReleaseMode.stop);
 
   ref.onDispose(() {
-    _log.fine('duplicateSoundProvider audio player disposed');
     player.dispose();
   });
   return player;
@@ -206,6 +201,8 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
         case NoCode _:
           // don't hide the duplicate overlay
           await _hideSuccessOverlay();
+        case CandidateCode():
+        // ignored
       }
     });
 

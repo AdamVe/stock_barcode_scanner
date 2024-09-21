@@ -1,10 +1,7 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
 import 'models.dart';
@@ -32,46 +29,11 @@ class ScannerWidgetOverlay extends ConsumerStatefulWidget {
 
 class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
     with SingleTickerProviderStateMixin {
-  late Animation<Color?> _colorAnimation;
-  late AnimationController _controller;
-
-  bool _showDuplicate = false;
-
   @override
   Widget build(BuildContext context) {
-    final duplicateSoundPlayer = ref.watch(duplicateSoundProvider);
-    ref.listen(scannerEventsProvider, (previous, next) async {
-      if (next is DuplicateCode) {
-        TickerFuture tickerFuture = _controller.repeat();
-        tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
-          _controller.forward(from: 0);
-          _controller.stop(canceled: true);
-          setState(() {
-            _showDuplicate = false;
-          });
-        });
-
-        setState(() {
-          _showDuplicate = true;
-        });
-
-        duplicateSoundPlayer.resume();
-        int count = 4;
-        Timer.periodic(const Duration(milliseconds: 100), (timer) {
-          HapticFeedback.lightImpact();
-          count--;
-          if (count == 0) {
-            timer.cancel();
-          }
-        });
-      }
-    });
-
     return Stack(fit: StackFit.expand, children: [
       ColorFiltered(
-        colorFilter: ColorFilter.mode(
-            _showDuplicate ? _colorAnimation.value! : widget.backgroundColor,
-            BlendMode.srcOut),
+        colorFilter: ColorFilter.mode(widget.backgroundColor, BlendMode.srcOut),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -86,29 +48,6 @@ class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
       ),
       _OverlayForeground(widget.scanWindow)
     ]);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-        duration: const Duration(milliseconds: 100), vsync: this);
-
-    _colorAnimation = ColorTween(
-            begin: Colors.white.withOpacity(0.3), end: widget.backgroundColor)
-        .animate(_controller)
-      ..addListener(() {
-        setState(() {
-          // redraws the widget
-        });
-      });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
   }
 }
 
@@ -141,39 +80,16 @@ class _ShapePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _BarcodeDetectionIcon extends ConsumerWidget {
-  const _BarcodeDetectionIcon();
+class _ActionParameters {
+  final Color strokeColor;
+  final String userInstruction;
+  final Function()? action;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(scannerEventsProvider);
-
-    final code = switch (s) {
-      NewCode c => c.code,
-      DuplicateCode d => '${d.code} (Duplicate)',
-      CandidateCode c => 'Candidate ${c.code}',
-      _ => ''
-    };
-
-    final detectionColor = switch (s) {
-      NewCode _ => Colors.white.withOpacity(1.0),
-      DuplicateCode _ => Colors.red.withOpacity(0.5),
-      CandidateCode _ => Colors.white.withOpacity(0.5),
-      _ => Colors.white.withOpacity(0.1),
-    };
-
-    return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Icon(
-            Symbols.remove_red_eye,
-            size: 32,
-            color: detectionColor,
-          ),
-          Text(code)
-        ]);
-  }
+  _ActionParameters({
+    required this.strokeColor,
+    this.userInstruction = '',
+    this.action,
+  });
 }
 
 class _OverlayForeground extends ConsumerWidget {
@@ -187,18 +103,34 @@ class _OverlayForeground extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(scannerEventsProvider);
 
-    final detectionColor = switch (s) {
-      NewCode _ => Colors.green.withOpacity(1.0),
-      DuplicateCode _ => Colors.red.withOpacity(0.7),
-      CandidateCode _ => Colors.green.withOpacity(0.7),
-      _ => Colors.white.withOpacity(0.7),
+    final ui = switch (s) {
+      NewCode _ => _ActionParameters(
+          strokeColor: Colors.green.withOpacity(1.0),
+          action: () {
+            ref.read(scanSoundProvider).resume();
+          },
+        ),
+      DuplicateCode _ => _ActionParameters(
+          strokeColor: Colors.red.withOpacity(0.7),
+          action: () {
+            ref.read(duplicateSoundProvider).resume();
+          },
+        ),
+      CandidateCode _ => _ActionParameters(
+          strokeColor: Colors.green.withOpacity(0.7),
+          userInstruction: 'Hold still...'),
+      NoCode _ => _ActionParameters(
+          strokeColor: Colors.white.withOpacity(0.7),
+          userInstruction: 'Scan a new item'),
     };
+
+    ui.action?.call();
 
     final strokePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = _strokeWidth
       ..strokeCap = StrokeCap.round
-      ..color = detectionColor;
+      ..color = ui.strokeColor;
 
     return Stack(
       children: [
@@ -206,22 +138,11 @@ class _OverlayForeground extends ConsumerWidget {
           path: _cutoutPath,
           pathPaint: strokePaint,
         ),
-        // Positioned(
-        //   left: 0,
-        //   right: 0,
-        //   top: _scanWindow.bottomCenter.dy,
-        //   child: ColoredBox(
-        //     color: Colors.transparent,
-        //     child: Text(
-        //       'Scan an item...',
-        //       textAlign: TextAlign.center,
-        //     ),
-        //   ),
-        // ),
         Positioned(
-          left: _scanWindow.left,
-          top: _scanWindow.top - 32,
-          child: const _BarcodeDetectionIcon(),
+          left: 0,
+          right: 0,
+          top: _scanWindow.bottomCenter.dy,
+          child: Center(child: Text(ui.userInstruction)),
         ),
       ],
     );

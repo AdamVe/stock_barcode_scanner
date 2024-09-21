@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:stock_barcode_scanner/theme.dart';
 
 import 'data/db.dart';
@@ -11,11 +10,6 @@ import 'project_manager/project_manager_screen.dart';
 import 'scanner/scanner_screen.dart';
 
 void main() async {
-  Logger.root.level = Level.ALL; // defaults to Level.INFO
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
-
   WidgetsFlutterBinding.ensureInitialized();
   await DbConnector.init();
   runApp(ProviderScope(

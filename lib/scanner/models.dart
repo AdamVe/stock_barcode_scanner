@@ -5,28 +5,25 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'models.g.dart';
 
-class ScannerEvent {
+sealed class ScannerEvent {
   const ScannerEvent();
 }
 
 class NoCode extends ScannerEvent {}
 
-class _ScannerCodeEvent extends ScannerEvent {
+class NewCode extends ScannerEvent {
   final String code;
-
-  const _ScannerCodeEvent(this.code);
+  const NewCode(this.code);
 }
 
-class NewCode extends _ScannerCodeEvent {
-  const NewCode(super.code);
+class DuplicateCode extends ScannerEvent {
+  final String code;
+  const DuplicateCode(this.code);
 }
 
-class DuplicateCode extends _ScannerCodeEvent {
-  const DuplicateCode(super.code);
-}
-
-class CandidateCode extends _ScannerCodeEvent {
-  const CandidateCode(super.code);
+class CandidateCode extends ScannerEvent {
+  final String code;
+  const CandidateCode(this.code);
 }
 
 @riverpod
