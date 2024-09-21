@@ -666,16 +666,17 @@ class __$$ScannedItemImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ScannedItemImpl implements _ScannedItem {
   const _$ScannedItemImpl(
-      {required this.id,
+      {this.id = 0,
       required this.barcode,
       required this.created,
       required this.updated,
-      required this.count});
+      this.count = 0});
 
   factory _$ScannedItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$ScannedItemImplFromJson(json);
 
   @override
+  @JsonKey()
   final int id;
   @override
   final String barcode;
@@ -684,6 +685,7 @@ class _$ScannedItemImpl implements _ScannedItem {
   @override
   final DateTime updated;
   @override
+  @JsonKey()
   final int count;
 
   @override
@@ -726,11 +728,11 @@ class _$ScannedItemImpl implements _ScannedItem {
 
 abstract class _ScannedItem implements ScannedItem {
   const factory _ScannedItem(
-      {required final int id,
+      {final int id,
       required final String barcode,
       required final DateTime created,
       required final DateTime updated,
-      required final int count}) = _$ScannedItemImpl;
+      final int count}) = _$ScannedItemImpl;
 
   factory _ScannedItem.fromJson(Map<String, dynamic> json) =
       _$ScannedItemImpl.fromJson;

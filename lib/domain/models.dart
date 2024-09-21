@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'models.freezed.dart';
-
 part 'models.g.dart';
 
 @freezed
@@ -37,11 +36,11 @@ class Section with _$Section {
 @freezed
 class ScannedItem with _$ScannedItem {
   const factory ScannedItem({
-    required int id,
+    @Default(0) int id,
     required String barcode,
     required DateTime created,
     required DateTime updated,
-    required int count,
+    @Default(0) int count,
   }) = _ScannedItem;
 
   factory ScannedItem.fromJson(Map<String, Object?> json) =>

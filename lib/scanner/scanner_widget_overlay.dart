@@ -1,15 +1,17 @@
-import 'dart:async';
+import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+
+import 'models.dart';
+
+const pi_2 = pi / 2.0;
+const pi_3_2 = 3.0 * pi_2;
 
 class ScannerWidgetOverlay extends ConsumerStatefulWidget {
   final Rect scanWindow;
-  final backgroundColor = const Color.fromARGB(50, 0, 0, 0);
+  final backgroundColor = const Color.fromARGB(140, 0, 0, 0);
 
   const ScannerWidgetOverlay({
     super.key,
@@ -27,50 +29,11 @@ class ScannerWidgetOverlay extends ConsumerStatefulWidget {
 
 class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
     with SingleTickerProviderStateMixin {
-  late Animation<Color?> _colorAnimation;
-  late AnimationController _controller;
-
-  bool _showDuplicate = false;
-
   @override
   Widget build(BuildContext context) {
-    final duplicateSoundPlayer = ref.watch(duplicateSoundProvider);
-    ref.listen(duplicateProvider, (previous, next) async {
-      if (next == true) {
-        TickerFuture tickerFuture = _controller.repeat();
-        tickerFuture.timeout(const Duration(milliseconds: 400), onTimeout: () {
-          _controller.forward(from: 0);
-          _controller.stop(canceled: true);
-          setState(() {
-            _showDuplicate = false;
-            if (kDebugMode) {
-              print('Clearing duplicate scan notification');
-            }
-            ref.read(duplicateProvider.notifier).update(false);
-          });
-        });
-
-        setState(() {
-          _showDuplicate = true;
-        });
-
-        duplicateSoundPlayer.resume();
-        int count = 4;
-        Timer.periodic(const Duration(milliseconds: 100), (timer) {
-          HapticFeedback.lightImpact();
-          count--;
-          if (count == 0) {
-            timer.cancel();
-          }
-        });
-      }
-    });
-
     return Stack(fit: StackFit.expand, children: [
       ColorFiltered(
-        colorFilter: ColorFilter.mode(
-            _showDuplicate ? _colorAnimation.value! : widget.backgroundColor,
-            BlendMode.srcOut),
+        colorFilter: ColorFilter.mode(widget.backgroundColor, BlendMode.srcOut),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -85,29 +48,6 @@ class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
       ),
       _OverlayForeground(widget.scanWindow)
     ]);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-        duration: const Duration(milliseconds: 100), vsync: this);
-
-    _colorAnimation = ColorTween(
-            begin: Colors.white.withOpacity(0.3), end: widget.backgroundColor)
-        .animate(_controller)
-      ..addListener(() {
-        setState(() {
-          // redraws the widget
-        });
-      });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _controller.dispose();
   }
 }
 
@@ -140,95 +80,89 @@ class _ShapePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _BarcodeDetectionIcon extends ConsumerWidget {
-  const _BarcodeDetectionIcon();
+class _ActionParameters {
+  final Color strokeColor;
+  final String userInstruction;
+  final Function()? action;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final seeBarcode = ref.watch(detectedBarcodeProvider) != '';
-
-    final detectionColor = seeBarcode
-        ? Colors.green.withOpacity(1)
-        : Colors.white.withOpacity(0.3);
-
-    return Icon(
-      Symbols.remove_red_eye,
-      size: 32,
-      color: detectionColor,
-    );
-  }
+  _ActionParameters({
+    required this.strokeColor,
+    this.userInstruction = '',
+    this.action,
+  });
 }
 
 class _OverlayForeground extends ConsumerWidget {
-  static const _strokeWidth = 1.0;
-  static const _strokeWidth_2 = _strokeWidth / 2;
+  static const _strokeWidth = 5.0;
   final Rect _scanWindow;
   final Path _cutoutPath;
-  final Paint _cutoutPaint;
 
-  _OverlayForeground(this._scanWindow)
-      : _cutoutPath = _buildPath(_scanWindow),
-        _cutoutPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = _strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..color = Colors.white.withOpacity(0.9);
+  _OverlayForeground(this._scanWindow) : _cutoutPath = _buildPath(_scanWindow);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(scannerEventsProvider);
+
+    final ui = switch (s) {
+      NewCode _ => _ActionParameters(
+          strokeColor: Colors.green.withOpacity(1.0),
+          action: () {
+            ref.read(scanSoundProvider).resume();
+          },
+        ),
+      DuplicateCode _ => _ActionParameters(
+          strokeColor: Colors.red.withOpacity(0.7),
+          action: () {
+            ref.read(duplicateSoundProvider).resume();
+          },
+        ),
+      CandidateCode _ => _ActionParameters(
+          strokeColor: Colors.green.withOpacity(0.7),
+          userInstruction: 'Hold still...'),
+      NoCode _ => _ActionParameters(
+          strokeColor: Colors.white.withOpacity(0.7),
+          userInstruction: 'Scan a new item'),
+    };
+
+    ui.action?.call();
+
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..color = ui.strokeColor;
+
     return Stack(
       children: [
         _PathPainter(
           path: _cutoutPath,
-          pathPaint: _cutoutPaint,
+          pathPaint: strokePaint,
         ),
         Positioned(
-          left: _scanWindow.left,
-          top: _scanWindow.top - 32,
-          child: const _BarcodeDetectionIcon(),
+          left: 0,
+          right: 0,
+          top: _scanWindow.bottomCenter.dy,
+          child: Center(child: Text(ui.userInstruction)),
         ),
       ],
     );
   }
 
   static Path _buildPath(Rect rect) {
-    final x1 = rect.center.dx - rect.width / 2;
-    final y1 = rect.center.dy - rect.height / 2;
-    final x2 = rect.center.dx + rect.width / 2;
-    final y2 = rect.center.dy + rect.height / 2;
+    final x1 = rect.center.dx - rect.width / 2 + 5;
+    final y1 = rect.center.dy - rect.height / 2 + 5;
+    final x2 = rect.center.dx + rect.width / 2 - 5;
+    final y2 = rect.center.dy + rect.height / 2 - 5;
+
+    final r1 = Rect.fromLTWH(x1, y1, 40, 40);
+    final r2 = Rect.fromLTWH(x2 - 40, y1, 40, 40);
+    final r3 = Rect.fromLTWH(x1, y2 - 40, 40, 40);
+    final r4 = Rect.fromLTWH(x2 - 40, y2 - 40, 40, 40);
     return Path()
-      ..addPolygon([
-        Offset(x1 - _strokeWidth_2, y1 - 5),
-        Offset(x1 - _strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y1 - _strokeWidth_2),
-        Offset(x1 + 20, y1 - _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + _strokeWidth_2, y2 - 20),
-        Offset(x2 + _strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y2 + _strokeWidth_2),
-        Offset(x2 + 5, y2 + _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - _strokeWidth_2, y2 - 20),
-        Offset(x1 - _strokeWidth_2, y2 + 5)
-      ], false)
-      ..addPolygon([
-        Offset(x1 - 5, y2 + _strokeWidth_2),
-        Offset(x1 + 20, y2 + _strokeWidth_2)
-      ], false)
-      ..addPolygon([
-        Offset(x2 + _strokeWidth_2, y1 - 5),
-        Offset(x2 + _strokeWidth_2, y1 + 20)
-      ], false)
-      ..addPolygon([
-        Offset(x2 - 20, y1 - _strokeWidth_2),
-        Offset(x2 + 5, y1 - _strokeWidth_2)
-      ], false);
+      ..addArc(r1, pi, pi_2)
+      ..addArc(r2, pi_3_2, pi_2)
+      ..addArc(r3, pi_2, pi_2)
+      ..addArc(r4, 0, pi_2);
   }
 }
 
@@ -246,6 +180,6 @@ class _OverlayBackground extends StatelessWidget {
   }
 
   static Path _buildPath(Rect rect) {
-    return Path()..addRRect(RRect.fromRectXY(rect, 0, 0));
+    return Path()..addRRect(RRect.fromRectXY(rect, 25, 25));
   }
 }

@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  mobile_scanner: ^5.1.1
+  mobile_scanner: ^5.2.1
   sqlite3: ^2.4.5
   sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.4
