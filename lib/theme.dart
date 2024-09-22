@@ -5,7 +5,7 @@ part 'theme.g.dart';
 
 @riverpod
 ThemeData themeData(ThemeDataRef ref, Brightness brightness) {
-  const seedColor = Colors.blueGrey;
+  const seedColor = Colors.green;
 
   return ThemeData(
       colorScheme:

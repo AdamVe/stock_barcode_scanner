@@ -50,7 +50,8 @@ class ReviewBottomSheet extends ConsumerWidget {
                                 scannedItems[0].barcode,
                                 style: TextStyle(
                                     color:
-                                        Theme.of(context).colorScheme.primary),
+                                        Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold),
                               )
                             ],
                           ),
