@@ -32,7 +32,7 @@ class _ScanDuplicateState extends State<ScanDuplicate> {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.fromLTRB(8, 0, 8, 64),
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 80),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8.0, 8, 8, 8),
         child: Column(

@@ -66,11 +66,11 @@ class ScannedCode extends _$ScannedCode {
           }
         });
 
-    checkTimer?.cancel();
-    clearCounter = 0;
     if (ref.read(scannerActiveProvider) != true) {
       return;
     }
+    checkTimer?.cancel();
+    clearCounter = 0;
     _set(code);
     startTimer();
   }

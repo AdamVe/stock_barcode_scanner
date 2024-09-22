@@ -11,18 +11,21 @@ class ScanSuccess extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.fromLTRB(8, 0, 8, 64),
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 80),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8.0, 16, 8, 16),
         child: Column(
           children: [
             ListTile(
                 iconColor: Theme.of(context).colorScheme.primary,
-                title: const Text('Successful scan'),
-                subtitle: Text(scannedItem.barcode),
+                title: Text(scannedItem.barcode,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary)),
+                subtitle: const Text('Scanned successfully'),
                 leading: const Icon(
-                  Symbols.check_rounded,
-                  size: 36,
+                  Symbols.barcode,
+                  size: 48,
                   //color: Colors.green,
                 )),
           ],
