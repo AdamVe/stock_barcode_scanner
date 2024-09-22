@@ -6,7 +6,7 @@ part of 'scanner_screen.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$scanSoundHash() => r'3a68143bb3841c6481a872f1e1d840d6a886fce1';
+String _$scanSoundHash() => r'5ba51decba984fc45361ec651e813f88dadc8b7a';
 
 /// See also [scanSound].
 @ProviderFor(scanSound)
@@ -20,7 +20,7 @@ final scanSoundProvider = Provider<AudioPlayer>.internal(
 );
 
 typedef ScanSoundRef = ProviderRef<AudioPlayer>;
-String _$duplicateSoundHash() => r'3e553c89a182accb2f76f31f97319cf5417c555e';
+String _$duplicateSoundHash() => r'f79b122cd0058c1504ff21b4a1f9eacffae61051';
 
 /// See also [duplicateSound].
 @ProviderFor(duplicateSound)

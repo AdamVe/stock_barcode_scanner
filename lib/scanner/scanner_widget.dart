@@ -7,17 +7,15 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_widget_overlay.dart';
 
 class _MobileScannerWidget extends StatelessWidget {
+  final MobileScannerController? controller;
   final ScannerWidgetOverlay overlay;
   final Function(BarcodeCapture) onDetect;
 
-  const _MobileScannerWidget({required this.onDetect, required this.overlay});
+  const _MobileScannerWidget(
+      {this.controller, required this.onDetect, required this.overlay});
 
   @override
   Widget build(BuildContext context) {
-    final controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.normal,
-      detectionTimeoutMs: 250,
-    );
     return MobileScanner(
       controller: controller,
       scanWindow: overlay.scanWindow,
@@ -110,16 +108,21 @@ class _DesktopScannerWidgetState extends State<_DesktopScannerWidget> {
 }
 
 class ScannerWidget extends ConsumerWidget {
+  final MobileScannerController? controller;
   final ScannerWidgetOverlay overlay;
   final Function(BarcodeCapture) onDetect;
 
   const ScannerWidget(
-      {super.key, required this.overlay, required this.onDetect});
+      {super.key,
+      this.controller,
+      required this.overlay,
+      required this.onDetect});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       Platform.isAndroid || Platform.isIOS
           ? _MobileScannerWidget(
+              controller: controller,
               overlay: overlay,
               onDetect: onDetect,
             )

@@ -142,6 +142,14 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
     duplicateOverlay = null;
   }
 
+  final controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.normal,
+    detectionTimeoutMs: 250,
+  );
+
+  // TODO: make proper controller with properties and persistence
+  final soundController = ValueNotifier<bool>(true);
+
   @override
   Widget build(BuildContext context) {
     final section = ref.read(currentSectionProvider);
@@ -231,7 +239,12 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                         constraints.maxWidth, constraints.maxHeight);
                     return Stack(children: [
                       ScannerWidget(
-                        overlay: ScannerWidgetOverlay(scanWindow: scanRect),
+                        controller: controller,
+                        overlay: ScannerWidgetOverlay(
+                          scanWindow: scanRect,
+                          soundController: soundController,
+                          controller: controller,
+                        ),
                         onDetect: (barcodeCapture) => ref
                             .read(scannedCodeProvider.notifier)
                             .onDetect(firstEan13(barcodeCapture)),

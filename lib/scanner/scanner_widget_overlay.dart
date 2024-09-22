@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
 
 import 'models.dart';
@@ -10,11 +12,15 @@ const pi_2 = pi / 2.0;
 const pi_3_2 = 3.0 * pi_2;
 
 class ScannerWidgetOverlay extends ConsumerStatefulWidget {
+  final MobileScannerController controller;
   final Rect scanWindow;
   final backgroundColor = const Color.fromARGB(140, 0, 0, 0);
+  final ValueNotifier<bool> soundController;
 
   const ScannerWidgetOverlay({
     super.key,
+    required this.soundController,
+    required this.controller,
     required this.scanWindow,
   });
 
@@ -46,7 +52,9 @@ class _ScannerWidgetOverlayState extends ConsumerState<ScannerWidgetOverlay>
           ],
         ),
       ),
-      _OverlayForeground(widget.scanWindow)
+      _OverlayForeground(widget.scanWindow,
+          soundController: widget.soundController,
+          controller: widget.controller)
     ]);
   }
 }
@@ -94,10 +102,16 @@ class _ActionParameters {
 
 class _OverlayForeground extends ConsumerWidget {
   static const _strokeWidth = 5.0;
+  final ValueNotifier<bool> soundController;
+  final MobileScannerController controller;
   final Rect _scanWindow;
   final Path _cutoutPath;
 
-  _OverlayForeground(this._scanWindow) : _cutoutPath = _buildPath(_scanWindow);
+  _OverlayForeground(
+    this._scanWindow, {
+    required this.soundController,
+    required this.controller,
+  }) : _cutoutPath = _buildPath(_scanWindow);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -107,13 +121,17 @@ class _OverlayForeground extends ConsumerWidget {
       NewCode _ => _ActionParameters(
           strokeColor: Colors.green.withOpacity(1.0),
           action: () {
-            ref.read(scanSoundProvider).resume();
+            if (soundController.value) {
+              ref.read(scanSoundProvider).resume();
+            }
           },
         ),
       DuplicateCode _ => _ActionParameters(
           strokeColor: Colors.red.withOpacity(0.7),
           action: () {
-            ref.read(duplicateSoundProvider).resume();
+            if (soundController.value) {
+              ref.read(duplicateSoundProvider).resume();
+            }
           },
         ),
       CandidateCode _ => _ActionParameters(
@@ -144,6 +162,32 @@ class _OverlayForeground extends ConsumerWidget {
           top: _scanWindow.bottomCenter.dy,
           child: Center(child: Text(ui.userInstruction)),
         ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 16,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _SoundButton(soundController),
+                  _TorchButton(controller),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: 64,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 64, 0, 0),
+                child: _PauseResumeScanningButton(controller),
+              ),
+            ))
       ],
     );
   }
@@ -181,5 +225,71 @@ class _OverlayBackground extends StatelessWidget {
 
   static Path _buildPath(Rect rect) {
     return Path()..addRRect(RRect.fromRectXY(rect, 25, 25));
+  }
+}
+
+class _SoundButton extends ConsumerWidget {
+  final ValueNotifier<bool> soundController;
+
+  const _SoundButton(this.soundController);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder(
+        valueListenable: soundController,
+        builder: (context, state, child) {
+          final soundIsOn = state == true;
+          return IconButton.filledTonal(
+              onPressed: () async =>
+                  soundController.value = !soundController.value,
+              icon: Icon(soundIsOn ? Symbols.volume_up : Symbols.volume_off));
+        });
+  }
+}
+
+class _TorchButton extends ConsumerWidget {
+  final MobileScannerController controller;
+
+  const _TorchButton(this.controller);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder(
+        valueListenable: controller,
+        builder: (context, state, child) {
+          final torchIsOn = state.torchState == TorchState.on;
+          return IconButton.filledTonal(
+              onPressed: () async => await controller.toggleTorch(),
+              icon: Icon(torchIsOn ? Symbols.flash_on : Symbols.flash_off));
+        });
+  }
+}
+
+class _PauseResumeScanningButton extends ConsumerWidget {
+  final MobileScannerController controller;
+
+  const _PauseResumeScanningButton(this.controller);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ValueListenableBuilder(
+        valueListenable: controller,
+        builder: (context, state, child) {
+          final scannerIsRunning = state.isInitialized && state.isRunning;
+          return TextButton.icon(
+              onPressed: () async {
+                if (scannerIsRunning == true) {
+                  await controller.stop();
+                } else {
+                  await controller.start();
+                }
+              },
+              label: scannerIsRunning
+                  ? const Text('Pause scanning')
+                  : const Text('Resume scanning'),
+              icon: Icon(
+                scannerIsRunning ? Symbols.pause : Symbols.resume,
+              ));
+        });
   }
 }

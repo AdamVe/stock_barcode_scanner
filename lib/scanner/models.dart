@@ -35,7 +35,7 @@ class ScannedCode extends _$ScannedCode {
   @override
   String? build() {
     _link = ref.keepAlive();
-    return '';
+    return null;
   }
 
   void dispose() {

@@ -6,7 +6,7 @@ part of 'models.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$scannedCodeHash() => r'7da8f0fcffc7c8e70891a14e84080a3619350590';
+String _$scannedCodeHash() => r'bfd68ec7110796a6f2ab2cda1addd8823e0adb62';
 
 /// See also [ScannedCode].
 @ProviderFor(ScannedCode)
@@ -21,7 +21,7 @@ final scannedCodeProvider =
 );
 
 typedef _$ScannedCode = AutoDisposeNotifier<String?>;
-String _$scannerEventsHash() => r'93b6924f6de05be8371fc600456fda1a49d6a7a5';
+String _$scannerEventsHash() => r'b11bc62e86d115f0019a5f2294c2c8a54d746242';
 
 /// See also [ScannerEvents].
 @ProviderFor(ScannerEvents)
