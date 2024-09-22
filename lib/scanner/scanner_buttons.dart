@@ -59,18 +59,3 @@ class PauseResumeScanningButton extends ConsumerWidget {
         ));
   }
 }
-
-class ReviewButton extends ConsumerWidget {
-  final Function() onPressed;
-
-  const ReviewButton({required this.onPressed, super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return TextButton(
-        onPressed: onPressed,
-        child: const Icon(
-          Symbols.expand_less,
-        ));
-  }
-}
