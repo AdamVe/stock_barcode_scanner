@@ -88,7 +88,9 @@ class ScannerEvents extends _$ScannerEvents {
 
       _promoteCandidate = Timer(const Duration(milliseconds: 300), () {
         _lastCode = _candidateCode;
-        state = NewCode(_candidateCode!);
+        if (state is! NewCode || ((state as NewCode).code != _candidateCode)) {
+          state = NewCode(_candidateCode!);
+        }
       });
 
       _candidateCode = scannedCode;

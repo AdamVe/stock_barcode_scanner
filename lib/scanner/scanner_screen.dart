@@ -37,7 +37,7 @@ class CurrentSection extends _$CurrentSection {
 @Riverpod(keepAlive: true)
 AudioPlayer scanSound(ScanSoundRef ref) {
   final player = AudioPlayer()
-    ..setSource(AssetSource('sounds/scan.wav'))
+    ..setSource(AssetSource('sounds/success_2.wav'))
     ..setReleaseMode(ReleaseMode.stop);
 
   ref.onDispose(() {
@@ -50,7 +50,7 @@ AudioPlayer scanSound(ScanSoundRef ref) {
 @Riverpod(keepAlive: true)
 AudioPlayer duplicateSound(DuplicateSoundRef ref) {
   final player = AudioPlayer()
-    ..setSource(AssetSource('sounds/duplicate.wav'))
+    ..setSource(AssetSource('sounds/fail_1.wav'))
     ..setReleaseMode(ReleaseMode.stop);
 
   ref.onDispose(() {
