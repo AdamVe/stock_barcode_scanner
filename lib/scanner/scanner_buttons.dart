@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:stock_barcode_scanner/scanner/models.dart';
 
 class SoundButton extends ConsumerWidget {
   final ValueNotifier<bool> soundController;
@@ -41,31 +42,21 @@ class TorchButton extends ConsumerWidget {
 }
 
 class PauseResumeScanningButton extends ConsumerWidget {
-  final MobileScannerController controller;
-
-  const PauseResumeScanningButton(this.controller, {super.key});
+  const PauseResumeScanningButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ValueListenableBuilder(
-        valueListenable: controller,
-        builder: (context, state, child) {
-          final scannerIsRunning = state.isInitialized && state.isRunning;
-          return TextButton.icon(
-              onPressed: () async {
-                if (scannerIsRunning == true) {
-                  await controller.stop();
-                } else {
-                  await controller.start();
-                }
-              },
-              label: scannerIsRunning
-                  ? const Text('Pause scanning')
-                  : const Text('Resume scanning'),
-              icon: Icon(
-                scannerIsRunning ? Symbols.pause : Symbols.resume,
-              ));
-        });
+    final scannerActive = ref.watch(scannerActiveProvider);
+    return TextButton.icon(
+        onPressed: () async {
+          ref.read(scannerActiveProvider.notifier).state = !scannerActive;
+        },
+        label: scannerActive
+            ? const Text('Pause scanning')
+            : const Text('Resume scanning'),
+        icon: Icon(
+          scannerActive ? Symbols.pause : Symbols.resume,
+        ));
   }
 }
 

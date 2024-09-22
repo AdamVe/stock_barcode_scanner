@@ -35,7 +35,7 @@ final duplicateSoundProvider = Provider<AudioPlayer>.internal(
 );
 
 typedef DuplicateSoundRef = ProviderRef<AudioPlayer>;
-String _$scannedCodeHash() => r'bfd68ec7110796a6f2ab2cda1addd8823e0adb62';
+String _$scannedCodeHash() => r'a7c4660911c5b87cdb13addb87afe8f0fc105f5d';
 
 /// See also [ScannedCode].
 @ProviderFor(ScannedCode)

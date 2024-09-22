@@ -163,15 +163,26 @@ class _OverlayForeground extends ConsumerWidget {
           top: _scanWindow.bottomCenter.dy,
           child: Center(child: Text(ui.userInstruction)),
         ),
-        Positioned(
+        const Positioned(
             left: 0,
             right: 0,
             bottom: 80,
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 64, 0, 0),
-                child: PauseResumeScanningButton(controller),
+                padding: EdgeInsets.fromLTRB(0, 64, 0, 0),
+                child: PauseResumeScanningButton(),
               ),
+            )),
+        Positioned(
+            right: 0,
+            top: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Consumer(builder: (context, ref, _) {
+                return ref.watch(scannerActiveProvider) != true
+                    ? const Icon(Symbols.pause)
+                    : const SizedBox();
+              }),
             )),
         Positioned(
             left: 0,
@@ -225,7 +236,8 @@ class _OverlayForeground extends ConsumerWidget {
                               ) ??
                               const SizedBox(),
                           ReviewButton(onPressed: () async {
-                            await controller.stop();
+                            ref.read(scannerActiveProvider.notifier).state =
+                                false;
                             if (!context.mounted) {
                               return;
                             }
@@ -241,7 +253,8 @@ class _OverlayForeground extends ConsumerWidget {
                                     scannerController: controller,
                                   );
                                 });
-                            await controller.start();
+                            ref.read(scannerActiveProvider.notifier).state =
+                                true;
                           }),
                         ]),
                   );

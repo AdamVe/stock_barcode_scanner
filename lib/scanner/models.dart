@@ -68,6 +68,9 @@ class ScannedCode extends _$ScannedCode {
 
     checkTimer?.cancel();
     clearCounter = 0;
+    if (ref.read(scannerActiveProvider) != true) {
+      return;
+    }
     _set(code);
     startTimer();
   }
@@ -133,6 +136,8 @@ AudioPlayer scanSound(ScanSoundRef ref) {
 
   return player;
 }
+
+final scannerActiveProvider = StateProvider<bool>((ref) => true);
 
 @Riverpod(keepAlive: true)
 AudioPlayer duplicateSound(DuplicateSoundRef ref) {
