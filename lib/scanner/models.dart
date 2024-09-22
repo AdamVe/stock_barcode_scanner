@@ -1,7 +1,11 @@
 import 'dart:async';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../data/item_repository.dart';
+import '../domain/models.dart';
 
 part 'models.g.dart';
 
@@ -98,5 +102,93 @@ class ScannerEvents extends _$ScannerEvents {
     }
 
     return NoCode();
+  }
+}
+
+@Riverpod(keepAlive: true)
+class CurrentSection extends _$CurrentSection {
+  @override
+  Section build() => Section(
+      id: 0,
+      name: '',
+      details: '',
+      operatorName: '',
+      created: DateTime(0),
+      items: []);
+
+  void update(Section section) {
+    state = section;
+  }
+}
+
+@Riverpod(keepAlive: true)
+AudioPlayer scanSound(ScanSoundRef ref) {
+  final player = AudioPlayer()
+    ..setSource(AssetSource('sounds/success_2.wav'))
+    ..setReleaseMode(ReleaseMode.stop);
+
+  ref.onDispose(() {
+    player.dispose();
+  });
+
+  return player;
+}
+
+@Riverpod(keepAlive: true)
+AudioPlayer duplicateSound(DuplicateSoundRef ref) {
+  final player = AudioPlayer()
+    ..setSource(AssetSource('sounds/fail_1.wav'))
+    ..setReleaseMode(ReleaseMode.stop);
+
+  ref.onDispose(() {
+    player.dispose();
+  });
+  return player;
+}
+
+@riverpod
+class SectionController extends _$SectionController {
+  Future<List<ScannedItem>> _read() async {
+    final sectionId =
+        ref.watch(currentSectionProvider.select((section) => section.id));
+    return ref.watch(itemRepositoryProvider
+        .select((repository) => repository.getScans(sectionId: sectionId)));
+  }
+
+  @override
+  FutureOr<List<ScannedItem>> build() {
+    return _read();
+  }
+
+  Future<void> updateScannedItem(ScannedItem scannedItem) async {
+    await ref
+        .read(itemRepositoryProvider)
+        .updateScan(scannedItemId: scannedItem.id, scan: scannedItem);
+    await loadScannedItems();
+  }
+
+  Future<int> addScannedItem(int sectionId, ScannedItem scannedItem) async {
+    int id = await ref
+        .read(itemRepositoryProvider)
+        .addScan(sectionId: sectionId, scan: scannedItem);
+    await loadScannedItems();
+    return id;
+  }
+
+  Future<ScannedItem?> getLatest(int sectionId) async {
+    // TODO: optimize this
+    final allScans =
+        await ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
+    return allScans.firstOrNull;
+  }
+
+  Future<void> deleteScannedItem(ScannedItem scannedItem) async {
+    await ref.read(itemRepositoryProvider).deleteScan(scan: scannedItem);
+    await loadScannedItems();
+  }
+
+  Future<void> loadScannedItems() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => _read());
   }
 }

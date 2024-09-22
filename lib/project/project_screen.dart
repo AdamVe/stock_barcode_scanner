@@ -11,6 +11,7 @@ import '../domain/models.dart';
 import '../export/export.dart';
 import '../project/welcome_dialog.dart';
 import '../project_manager/project_manager_screen.dart';
+import '../scanner/models.dart';
 import '../scanner/scanner_screen.dart';
 import 'section_dialog.dart';
 

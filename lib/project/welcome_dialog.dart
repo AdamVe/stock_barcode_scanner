@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stock_barcode_scanner/data/item_repository.dart';
-import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+
+import '../scanner/models.dart';
 
 /// Welcome Dialog is shown when there is no existing project to quickly
 /// add a first project and section.

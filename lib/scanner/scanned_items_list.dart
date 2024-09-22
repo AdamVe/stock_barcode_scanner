@@ -1,64 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:stock_barcode_scanner/date_time_ext.dart';
+import 'package:stock_barcode_scanner/scanner/scanner_buttons.dart';
 
 import '../confirmation_dialog.dart';
-import '../data/item_repository.dart';
-import '../date_time_ext.dart';
-import '../domain/models.dart';
-import 'scanner_screen.dart';
-
-part 'scanned_items_list.g.dart';
+import 'models.dart';
 
 const _scannedItemListHeight = 250.0;
-
-@riverpod
-class _Controller extends _$Controller {
-  Future<List<ScannedItem>> _read() async {
-    final sectionId =
-        ref.watch(currentSectionProvider.select((section) => section.id));
-    return ref.watch(itemRepositoryProvider
-        .select((repository) => repository.getScans(sectionId: sectionId)));
-  }
-
-  @override
-  FutureOr<List<ScannedItem>> build() {
-    return _read();
-  }
-
-  Future<void> updateScannedItem(ScannedItem scannedItem) async {
-    await ref
-        .read(itemRepositoryProvider)
-        .updateScan(scannedItemId: scannedItem.id, scan: scannedItem);
-    await loadScannedItems();
-  }
-
-  Future<int> addScannedItem(int sectionId, ScannedItem scannedItem) async {
-    int id = await ref
-        .read(itemRepositoryProvider)
-        .addScan(sectionId: sectionId, scan: scannedItem);
-    await loadScannedItems();
-    return id;
-  }
-
-  Future<ScannedItem?> getLatest(int sectionId) async {
-    // TODO: optimize this
-    final allScans =
-        await ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
-    return allScans.firstOrNull;
-  }
-
-  Future<void> deleteScannedItem(ScannedItem scannedItem) async {
-    await ref.read(itemRepositoryProvider).deleteScan(scan: scannedItem);
-    await loadScannedItems();
-  }
-
-  Future<void> loadScannedItems() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _read());
-  }
-}
 
 class _ScannedItemListError extends StatelessWidget {
   const _ScannedItemListError();
@@ -93,107 +43,127 @@ class _ScannedItemListLoading extends StatelessWidget {
 }
 
 class ScannedItemList extends ConsumerWidget {
-  const ScannedItemList();
+  final ValueNotifier<bool> soundController;
+  final MobileScannerController scannerController;
+
+  const ScannedItemList({
+    required this.soundController,
+    required this.scannerController,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Builder(builder: (context) {
-      final state = ref.watch(_controllerProvider);
+      final state = ref.watch(sectionControllerProvider);
       return state.when(
           error: (e, st) => const _ScannedItemListError(),
           loading: () => const _ScannedItemListLoading(),
           data: (scannedItems) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ListTile(
-                    leading: const Icon(Symbols.document_scanner),
-                    title: Text('${scannedItems.length} items'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 8, 0),
+                    child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          //Text('${scannedItems.length} items'),
+                          const Text('Section review and controls'),
+                          const SizedBox(),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Icon(
+                              Symbols.expand_more,
+                            ),
+                          ),
+                        ]),
                   ),
-                  SizedBox(
-                    height: _scannedItemListHeight,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 4, 16, 4),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer
+                              .withOpacity(0.5),
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SoundButton(soundController),
+                            const SizedBox(
+                              width: 8,
+                            ),
+                            TorchButton(scannerController)
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 0, 0),
+                    child:
+                        Text('Section contains ${scannedItems.length} items:'),
+                  ),
+                  Expanded(
                     child: ListView.builder(
                         itemCount: scannedItems.length,
                         itemBuilder: (BuildContext context, int index) {
                           final scannedItem = scannedItems[index];
                           final count = scannedItem.count;
-                          final sum = scannedItems
-                              .where((i) => i.barcode == scannedItem.barcode)
-                              .fold(
-                                  0,
-                                  (previousValue, i) =>
-                                      previousValue + i.count);
-                          final textTheme = Theme.of(context).textTheme;
-                          return Card(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12.0),
-                              onTap: () async {
-                                await showConfirmationDialog(
-                                    context,
-                                    'Delete scan?',
-                                    'This will remove the scan with the count. This action cannot be undone.',
-                                    actions: [
-                                      DialogAction('Cancel', () {}),
-                                      DialogAction('Delete', () async {
-                                        await ref
-                                            .read(_controllerProvider.notifier)
-                                            .deleteScannedItem(scannedItem);
-                                      })
-                                    ],
-                                    icon: const Icon(Symbols.delete_outline));
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Builder(builder: (context) {
-                                      return FittedBox(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.max,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text('$count \u00d7 ',
-                                                  style: textTheme.bodyLarge
-                                                      ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.bold)),
-                                              Text(scannedItem.barcode,
-                                                  style:
-                                                      textTheme.displayMedium),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text('Scanned: ',
-                                            style: textTheme.bodyLarge
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                        Text(scannedItem.created.format()),
-                                        const SizedBox(
-                                          width: 32,
-                                        ),
-                                        Text('Sum: ',
-                                            style: textTheme.bodyLarge
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                        Text('$sum'),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          final theme = Theme.of(context);
+                          return ListTile(
+                            titleAlignment: ListTileTitleAlignment.titleHeight,
+                            leading: Text(
+                              '${scannedItems.length - index}.',
+                              textAlign: TextAlign.center,
                             ),
+                            title: Row(
+                              children: [
+                                const Icon(
+                                  Symbols.barcode,
+                                  size: 24,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                if (count > 1) Text('$count \u00d7 '),
+                                Text(
+                                  scannedItem.barcode,
+                                  style: TextStyle(
+                                      color: theme.colorScheme.primary),
+                                )
+                              ],
+                            ),
+                            trailing: IconButton.filledTonal(
+                                onPressed: () async {
+                                  await showConfirmationDialog(
+                                      context,
+                                      'Delete scan?',
+                                      'This will remove the scan with the count. This action cannot be undone.',
+                                      actions: [
+                                        DialogAction('Cancel', () {}),
+                                        DialogAction('Delete', () async {
+                                          await ref
+                                              .read(sectionControllerProvider
+                                                  .notifier)
+                                              .deleteScannedItem(scannedItem);
+                                        })
+                                      ],
+                                      icon: const Icon(Symbols.delete_outline));
+                                },
+                                icon: const Icon(Symbols.delete)),
+                            subtitle: Text(scannedItem.created.format()),
                           );
                         }),
                   ),

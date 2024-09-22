@@ -2,11 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:stock_barcode_scanner/scanner/scanner_screen.dart';
+import 'package:stock_barcode_scanner/scanner/scanned_items_list.dart';
 
 import 'models.dart';
+import 'scanner_buttons.dart';
 
 const pi_2 = pi / 2.0;
 const pi_3_2 = 3.0 * pi_2;
@@ -163,31 +164,88 @@ class _OverlayForeground extends ConsumerWidget {
           child: Center(child: Text(ui.userInstruction)),
         ),
         Positioned(
-          left: 0,
-          right: 0,
-          top: 16,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _SoundButton(soundController),
-                  _TorchButton(controller),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Positioned(
             left: 0,
             right: 0,
-            bottom: 64,
+            bottom: 80,
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(0, 64, 0, 0),
-                child: _PauseResumeScanningButton(controller),
+                child: PauseResumeScanningButton(controller),
               ),
-            ))
+            )),
+        Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: BottomSheet(
+                onClosing: () {},
+                builder: (context) {
+                  final state = ref.watch(sectionControllerProvider);
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0.0, 8.0, 0),
+                    child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          state.whenOrNull(
+                                data: (scannedItems) => Expanded(
+                                  child: ListTile(
+                                    title: Row(
+                                      children: [
+                                        Text(
+                                          'Latest ',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge,
+                                        ),
+                                        const Icon(
+                                          Symbols.barcode,
+                                          size: 24,
+                                        ),
+                                        const SizedBox(
+                                          width: 6,
+                                        ),
+                                        if (scannedItems[0].count > 1)
+                                          Text(
+                                              '${scannedItems[0].count} \u00d7 '),
+                                        Text(
+                                          scannedItems[0].barcode,
+                                          style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary),
+                                        )
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                        'Section contains ${scannedItems.length} items.'),
+                                  ),
+                                ),
+                              ) ??
+                              const SizedBox(),
+                          ReviewButton(onPressed: () async {
+                            await controller.stop();
+                            if (!context.mounted) {
+                              return;
+                            }
+                            await showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: false,
+                                enableDrag: true,
+                                isDismissible: true,
+                                showDragHandle: false,
+                                builder: (context) {
+                                  return ScannedItemList(
+                                    soundController: soundController,
+                                    scannerController: controller,
+                                  );
+                                });
+                            await controller.start();
+                          }),
+                        ]),
+                  );
+                }))
       ],
     );
   }
@@ -225,71 +283,5 @@ class _OverlayBackground extends StatelessWidget {
 
   static Path _buildPath(Rect rect) {
     return Path()..addRRect(RRect.fromRectXY(rect, 25, 25));
-  }
-}
-
-class _SoundButton extends ConsumerWidget {
-  final ValueNotifier<bool> soundController;
-
-  const _SoundButton(this.soundController);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ValueListenableBuilder(
-        valueListenable: soundController,
-        builder: (context, state, child) {
-          final soundIsOn = state == true;
-          return IconButton.filledTonal(
-              onPressed: () async =>
-                  soundController.value = !soundController.value,
-              icon: Icon(soundIsOn ? Symbols.volume_up : Symbols.volume_off));
-        });
-  }
-}
-
-class _TorchButton extends ConsumerWidget {
-  final MobileScannerController controller;
-
-  const _TorchButton(this.controller);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ValueListenableBuilder(
-        valueListenable: controller,
-        builder: (context, state, child) {
-          final torchIsOn = state.torchState == TorchState.on;
-          return IconButton.filledTonal(
-              onPressed: () async => await controller.toggleTorch(),
-              icon: Icon(torchIsOn ? Symbols.flash_on : Symbols.flash_off));
-        });
-  }
-}
-
-class _PauseResumeScanningButton extends ConsumerWidget {
-  final MobileScannerController controller;
-
-  const _PauseResumeScanningButton(this.controller);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ValueListenableBuilder(
-        valueListenable: controller,
-        builder: (context, state, child) {
-          final scannerIsRunning = state.isInitialized && state.isRunning;
-          return TextButton.icon(
-              onPressed: () async {
-                if (scannerIsRunning == true) {
-                  await controller.stop();
-                } else {
-                  await controller.start();
-                }
-              },
-              label: scannerIsRunning
-                  ? const Text('Pause scanning')
-                  : const Text('Resume scanning'),
-              icon: Icon(
-                scannerIsRunning ? Symbols.pause : Symbols.resume,
-              ));
-        });
   }
 }

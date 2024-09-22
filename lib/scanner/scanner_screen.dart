@@ -1,12 +1,9 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../data/item_repository.dart';
 import '../domain/models.dart';
 import '../theme.dart';
 import 'models.dart';
@@ -15,96 +12,6 @@ import 'scan_success.dart';
 import 'scanner_overlay.dart';
 import 'scanner_widget.dart';
 import 'scanner_widget_overlay.dart';
-
-part 'scanner_screen.g.dart';
-
-@Riverpod(keepAlive: true)
-class CurrentSection extends _$CurrentSection {
-  @override
-  Section build() => Section(
-      id: 0,
-      name: '',
-      details: '',
-      operatorName: '',
-      created: DateTime(0),
-      items: []);
-
-  void update(Section section) {
-    state = section;
-  }
-}
-
-@Riverpod(keepAlive: true)
-AudioPlayer scanSound(ScanSoundRef ref) {
-  final player = AudioPlayer()
-    ..setSource(AssetSource('sounds/success_2.wav'))
-    ..setReleaseMode(ReleaseMode.stop);
-
-  ref.onDispose(() {
-    player.dispose();
-  });
-
-  return player;
-}
-
-@Riverpod(keepAlive: true)
-AudioPlayer duplicateSound(DuplicateSoundRef ref) {
-  final player = AudioPlayer()
-    ..setSource(AssetSource('sounds/fail_1.wav'))
-    ..setReleaseMode(ReleaseMode.stop);
-
-  ref.onDispose(() {
-    player.dispose();
-  });
-  return player;
-}
-
-@riverpod
-class _Controller extends _$Controller {
-  Future<List<ScannedItem>> _read() async {
-    final sectionId =
-        ref.watch(currentSectionProvider.select((section) => section.id));
-    return ref.watch(itemRepositoryProvider
-        .select((repository) => repository.getScans(sectionId: sectionId)));
-  }
-
-  @override
-  FutureOr<List<ScannedItem>> build() {
-    return _read();
-  }
-
-  Future<void> updateScannedItem(ScannedItem scannedItem) async {
-    await ref
-        .read(itemRepositoryProvider)
-        .updateScan(scannedItemId: scannedItem.id, scan: scannedItem);
-    await loadScannedItems();
-  }
-
-  Future<int> addScannedItem(int sectionId, ScannedItem scannedItem) async {
-    int id = await ref
-        .read(itemRepositoryProvider)
-        .addScan(sectionId: sectionId, scan: scannedItem);
-    await loadScannedItems();
-    return id;
-  }
-
-  Future<ScannedItem?> getLatest(int sectionId) async {
-    // TODO: optimize this
-    final allScans =
-        await ref.read(itemRepositoryProvider).getScans(sectionId: sectionId);
-    return allScans.firstOrNull;
-  }
-
-  Future<void> deleteScannedItem(ScannedItem scannedItem) async {
-    await ref.read(itemRepositoryProvider).deleteScan(scan: scannedItem);
-    await loadScannedItems();
-  }
-
-  Future<void> loadScannedItems() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _read());
-  }
-}
 
 final successOverlayProvider = StateProvider<ScannerOverlay?>((ref) => null);
 final duplicateOverlayProvider = StateProvider<ScannerOverlay?>((ref) => null);
@@ -170,7 +77,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
 
             if (scannedItem.barcode.isNotEmpty) {
               ref
-                  .read(_controllerProvider.notifier)
+                  .read(sectionControllerProvider.notifier)
                   .addScannedItem(section.id, scannedItem);
               successOverlay =
                   ScannerOverlay.show(context, ScanSuccess(scannedItem));
@@ -182,7 +89,7 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           await _hideSuccessOverlay();
 
           final latestItem = await ref
-              .read(_controllerProvider.notifier)
+              .read(sectionControllerProvider.notifier)
               .getLatest(section.id);
 
           if (latestItem == null || latestItem.barcode != c.code) {
@@ -191,7 +98,9 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
           final content = ScanDuplicate(
             scannedItem: latestItem,
             onUpdate: (updated) {
-              ref.read(_controllerProvider.notifier).updateScannedItem(updated);
+              ref
+                  .read(sectionControllerProvider.notifier)
+                  .updateScannedItem(updated);
             },
             onClose: () async {
               await _hideDuplicateOverlay();
